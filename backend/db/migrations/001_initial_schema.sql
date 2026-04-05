@@ -4,7 +4,7 @@ SET search_path TO finsight;
 
 CREATE TABLE IF NOT EXISTS users (
     "id" INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    "email" text NOT NULL,
+    "email" text NOT NULL UNIQUE,
     "password_hash" text,
     "first_name" text,
     "last_name" text,
