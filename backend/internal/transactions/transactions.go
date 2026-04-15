@@ -3,6 +3,7 @@ package transactions
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/AntVith/FinSight/backend/db/repository"
 	"github.com/AntVith/FinSight/backend/internal/plaid"
@@ -10,7 +11,8 @@ import (
 )
 
 func SyncTransactions(ctx context.Context, item repository.Item) error {
-	var added, modified, removed []plaidSDK.Transaction
+	var added, modified []plaidSDK.Transaction
+	var removed []plaidSDK.RemovedTransaction
 	cursor := item.Cursor
 	hasMore := true
 
@@ -36,16 +38,23 @@ func SyncTransactions(ctx context.Context, item repository.Item) error {
 	if len(added) > 0 || len(modified) > 0 {
 		var toUpsert []repository.Transaction
 		for _, t := range append(added, modified...) {
+			date, err := time.Parse("2006-01-02", t.GetDate())
+			if err != nil {
+				return fmt.Errorf("error parsing date: %w", err)
+			}
+
+			category := t.GetPersonalFinanceCategory()
+
 			toUpsert = append(toUpsert, repository.Transaction{
 				ItemID:             item.ID,
 				UserID:             item.UserID,
 				PlaidTransactionID: t.GetTransactionId(),
 				Amount:             float64(t.GetAmount()),
-				Date:               t.GetDate().Time,
+				Date:               date,
 				Name:               t.GetName(),
 				MerchantName:       t.GetMerchantName(),
-				CategoryPrimary:    t.GetPersonalFinanceCategory().GetPrimary(),
-				CategoryDetailed:   t.GetPersonalFinanceCategory().GetDetailed(),
+				CategoryPrimary:    category.GetPrimary(),
+				CategoryDetailed:   category.GetDetailed(),
 				Pending:            t.GetPending(),
 			})
 		}
