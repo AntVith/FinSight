@@ -61,3 +61,7 @@ func ExchangePublicToken(ctx context.Context, publicToken string) (string, strin
 
 	return resp.GetAccessToken(), resp.GetItemId(), nil
 }
+
+func GetClient() *plaid.APIClient {
+	return plaidClient
+}
