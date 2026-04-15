@@ -16,6 +16,7 @@ import (
 type claudeRequest struct {
 	Model     string          `json:"model"`
 	MaxTokens int             `json:"max_tokens"`
+	System    string          `json:"system"`
 	Messages  []claudeMessage `json:"messages"`
 }
 
@@ -84,7 +85,7 @@ func buildPrompt(transactions []repository.Transaction) string {
 			"recommendation 3"
 		]
 	}`)
-	sb.WriteString("\n\nReturn ONLY the JSON object, no other text, no markdown, no backticks.\n\n")
+	sb.WriteString("\n\nYou must respond with ONLY the JSON object above. No introduction, no explanation, no markdown, no backticks. Start your response with { and end with }.\n\n")
 	sb.WriteString("Transactions:\n")
 
 	for _, t := range transactions {
@@ -114,6 +115,7 @@ func callClaude(ctx context.Context, prompt string) (*insightOutput, error) {
 	reqBody := claudeRequest{
 		Model:     model,
 		MaxTokens: 1000,
+		System:    "You are a JSON API. You must respond with only valid JSON. Never include explanatory text, markdown, or code blocks. Your entire response must be parseable by JSON.parse().",
 		Messages: []claudeMessage{
 			{Role: "user", Content: prompt},
 		},
@@ -141,7 +143,9 @@ func callClaude(ctx context.Context, prompt string) (*insightOutput, error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("Claude API returned status %d", resp.StatusCode)
+		var errBody map[string]interface{}
+		json.NewDecoder(resp.Body).Decode(&errBody)
+		return nil, fmt.Errorf("Claude API returned status %d: %v", resp.StatusCode, errBody)
 	}
 
 	var claudeResp claudeResponse
