@@ -1,0 +1,334 @@
+openapi: 3.0.3
+info:
+  title: FinSight API
+  description: |
+    Personal finance analyzer powered by Plaid and Claude AI.
+    Connects to bank accounts via Plaid Link, syncs transactions,
+    and generates AI-powered financial insights.
+
+    **Authentication:** Currently uses a hardcoded user_id = 1 for
+    demo purposes. Production would use JWT middleware to extract
+    user_id from request context, enforcing data isolation per user.
+  version: 1.0.0
+  contact:
+    name: Anthony Vithayathil
+    email: anthony.vithayathil1@gmail.com
+
+servers:
+  - url: http://localhost:8080
+    description: Local development
+  - url: https://your-railway-url.railway.app
+    description: Production — Railway (MVP deployment)
+
+tags:
+  - name: health
+    description: Service health
+  - name: link
+    description: Plaid Link token flow
+  - name: transactions
+    description: Transaction sync and retrieval
+  - name: insights
+    description: AI-generated financial insights
+
+paths:
+  /api/health:
+    get:
+      tags: [health]
+      summary: Health check
+      description: Returns service status. Used by load balancers and deployment platforms.
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+
+  /api/link/token:
+    get:
+      tags: [link]
+      summary: Create Plaid link token
+      description: |
+        Generates a short-lived link_token used to initialize Plaid Link
+        on the frontend. The token expires after 30 minutes.
+      responses:
+        '200':
+          description: Link token created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [link_token]
+                properties:
+                  link_token:
+                    type: string
+                    example: link-sandbox-abc123
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/link/exchange:
+    post:
+      tags: [link]
+      summary: Exchange public token
+      description: |
+        Exchanges the temporary public_token received from Plaid Link
+        for a permanent access_token. The access_token is encrypted
+        and stored server-side — never returned to the client.
+        Automatically saves the linked Item to the database.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [public_token]
+              properties:
+                public_token:
+                  type: string
+                  description: Temporary token from Plaid Link onSuccess callback
+                  example: public-sandbox-abc123
+                institution_name:
+                  type: string
+                  description: Name of the linked financial institution
+                  example: Chase
+      responses:
+        '200':
+          description: Token exchanged and Item saved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/transactions/sync:
+    post:
+      tags: [transactions]
+      summary: Sync transactions
+      description: |
+        Syncs transactions for all linked accounts using Plaid's
+        /transactions/sync cursor-based endpoint. Handles Plaid
+        pagination internally — clients never manage page state.
+        After sync, synchronously triggers Claude AI to regenerate
+        financial insights. Note: adds 3-5 seconds of latency.
+        Production should use async job queue for insight generation.
+        All DB operations are atomic.
+      responses:
+        '200':
+          description: Sync completed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: sync complete
+        '400':
+          description: No linked accounts found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: no linked accounts found
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/transactions:
+    get:
+      tags: [transactions]
+      summary: Get all transactions
+      description: |
+        Returns all synced transactions for the user ordered by
+        date descending. Pending transactions are included.
+      responses:
+        '200':
+          description: List of transactions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Transaction'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/insights:
+    get:
+      tags: [insights]
+      summary: Get financial insights
+      description: |
+        Returns the most recently generated AI financial insight
+        for the user. Insights are generated automatically after
+        each transaction sync. Returns a status message if no
+        insights have been generated yet.
+      responses:
+        '200':
+          description: Financial insight or no-insight status
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/Insight'
+                  - type: object
+                    properties:
+                      status:
+                        type: string
+                        example: no insights yet
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+components:
+  schemas:
+    Transaction:
+      type: object
+      properties:
+        ID:
+          type: integer
+          example: 1
+        ItemID:
+          type: integer
+          example: 1
+        UserID:
+          type: integer
+          example: 1
+        PlaidTransactionID:
+          type: string
+          example: abc123xyz
+        Amount:
+          type: number
+          format: float
+          description: Positive = money out, negative = money in
+          example: 45.50
+        Date:
+          type: string
+          format: date-time
+          example: "2026-04-01T00:00:00Z"
+        Name:
+          type: string
+          description: Raw transaction description
+          example: Uber 063015 SF**POOL**
+        MerchantName:
+          type: string
+          description: Cleaned merchant name. Empty string if unavailable.
+          example: Uber
+        CategoryPrimary:
+          type: string
+          description: Plaid personal_finance_category primary value
+          example: TRANSPORTATION
+        CategoryDetailed:
+          type: string
+          description: Plaid personal_finance_category detailed value
+          example: TRANSPORTATION_TAXIS_AND_RIDE_SHARES
+        Pending:
+          type: boolean
+          description: Whether the transaction has settled
+          example: false
+
+    CategorySummary:
+      type: object
+      properties:
+        category:
+          type: string
+          example: FOOD_AND_DRINK
+        total_amount:
+          type: number
+          format: float
+          example: 450.00
+        count:
+          type: integer
+          example: 12
+
+    Anomaly:
+      type: object
+      properties:
+        transaction_id:
+          type: string
+          example: abc123xyz
+        name:
+          type: string
+          example: KFC
+        amount:
+          type: number
+          format: float
+          example: 500.00
+        reason:
+          type: string
+          example: A $500 charge at KFC is unusually high for a fast food restaurant
+
+    Insight:
+      type: object
+      properties:
+        ID:
+          type: integer
+          example: 1
+        UserID:
+          type: integer
+          example: 1
+        Summary:
+          type: string
+          description: 2-3 sentence plain English financial health overview
+          example: Your spending is heavily concentrated in food and entertainment.
+        TopCategories:
+          type: array
+          items:
+            $ref: '#/components/schemas/CategorySummary'
+        Anomalies:
+          type: array
+          items:
+            $ref: '#/components/schemas/Anomaly'
+        Recommendations:
+          type: array
+          items:
+            type: string
+          example:
+            - Review your recurring subscriptions
+            - Build a 3-month emergency fund
+            - Reduce dining out by 20%
+        CreatedAt:
+          type: string
+          format: date-time
+          example: "2026-04-14T22:48:59Z"
+        UpdatedAt:
+          type: string
+          format: date-time
+          example: "2026-04-14T22:48:59Z"
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          example: something went wrong
+
+  responses:
+    BadRequest:
+      description: Invalid request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: invalid request body
+    InternalError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: internal server error

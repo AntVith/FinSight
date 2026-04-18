@@ -27,6 +27,7 @@ func NewRouter() http.Handler {
 	r.Use(corsMiddleware)
 
 	r.Route("/api", func(r chi.Router) {
+		r.Get("/health", healthHandler)
 		r.Get("/link/token", createLinkTokenHandler)
 		r.Post("/link/exchange", exchangeTokenHandler)
 		r.Post("/transactions/sync", syncTransactionsHandler)
@@ -167,4 +168,11 @@ func getTransactionsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, txns)
+}
+
+func healthHandler(w http.ResponseWriter, r *http.Request) {
+	writeJSON(w, http.StatusOK, map[string]string{
+		"status":  "ok",
+		"version": "1.0.0",
+	})
 }
