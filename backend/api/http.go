@@ -9,15 +9,13 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 
 	"github.com/AntVith/FinSight/backend/db/repository"
+	finsightAuth "github.com/AntVith/FinSight/backend/internal/auth"
 	"github.com/AntVith/FinSight/backend/internal/insights"
 	"github.com/AntVith/FinSight/backend/internal/plaid"
 	"github.com/AntVith/FinSight/backend/internal/transactions"
 )
 
-// TO DO: Add authentication middleware
-const userID = 1
-
-func NewRouter() http.Handler {
+func NewRouter(authService *finsightAuth.Service) http.Handler {
 	r := chi.NewRouter()
 
 	r.Use(middleware.RequestID)
@@ -28,11 +26,19 @@ func NewRouter() http.Handler {
 
 	r.Route("/api", func(r chi.Router) {
 		r.Get("/health", healthHandler)
-		r.Get("/link/token", createLinkTokenHandler)
-		r.Post("/link/exchange", exchangeTokenHandler)
-		r.Post("/transactions/sync", syncTransactionsHandler)
-		r.Get("/insights", getInsightsHandler)
-		r.Get("/transactions", getTransactionsHandler)
+		r.Post("/auth/register", authRegisterPOST(authService))
+		r.Post("/auth/login", authLoginPOST(authService))
+		r.Post("/auth/refresh", authRefreshPOST(authService))
+		r.Post("/auth/logout", authLogoutPOST(authService))
+
+		r.Group(func(r chi.Router) {
+			r.Use(authService.BearerMiddleware)
+			r.Get("/link/token", createLinkTokenHandler)
+			r.Post("/link/exchange", exchangeTokenHandler)
+			r.Post("/transactions/sync", syncTransactionsHandler)
+			r.Get("/insights", getInsightsHandler)
+			r.Get("/transactions", getTransactionsHandler)
+		})
 	})
 
 	return r
@@ -51,7 +57,7 @@ func corsMiddleware(next http.Handler) http.Handler {
 		}
 
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 
 		if r.Method == "OPTIONS" {
 			w.WriteHeader(http.StatusOK)
@@ -73,7 +79,13 @@ func writeError(w http.ResponseWriter, status int, message string) {
 }
 
 func createLinkTokenHandler(w http.ResponseWriter, r *http.Request) {
-	token, err := plaid.CreateLinkToken(r.Context(), fmt.Sprintf("%d", userID))
+	userIdentifier, authenticated := finsightAuth.AuthenticatedUserID(r.Context())
+	if !authenticated {
+		writeError(w, http.StatusUnauthorized, "unauthenticated")
+		return
+	}
+
+	token, err := plaid.CreateLinkToken(r.Context(), fmt.Sprintf("%d", userIdentifier))
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -83,6 +95,12 @@ func createLinkTokenHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func exchangeTokenHandler(w http.ResponseWriter, r *http.Request) {
+	userIdentifier, authenticated := finsightAuth.AuthenticatedUserID(r.Context())
+	if !authenticated {
+		writeError(w, http.StatusUnauthorized, "unauthenticated")
+		return
+	}
+
 	var body struct {
 		PublicToken     string `json:"public_token"`
 		InstitutionName string `json:"institution_name"`
@@ -104,7 +122,7 @@ func exchangeTokenHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := repository.SaveItem(r.Context(), userID, accessToken, itemID, body.InstitutionName); err != nil {
+	if err := repository.SaveItem(r.Context(), userIdentifier, accessToken, itemID, body.InstitutionName); err != nil {
 		writeError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -113,7 +131,13 @@ func exchangeTokenHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func syncTransactionsHandler(w http.ResponseWriter, r *http.Request) {
-	items, err := repository.GetItemsByUserID(r.Context(), userID)
+	userIdentifier, authenticated := finsightAuth.AuthenticatedUserID(r.Context())
+	if !authenticated {
+		writeError(w, http.StatusUnauthorized, "unauthenticated")
+		return
+	}
+
+	items, err := repository.GetItemsByUserID(r.Context(), userIdentifier)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -131,13 +155,13 @@ func syncTransactionsHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	allTransactions, err := repository.GetTransactionsByUserID(r.Context(), userID)
+	allTransactions, err := repository.GetTransactionsByUserID(r.Context(), userIdentifier)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	if err := insights.GenerateInsight(r.Context(), userID, allTransactions); err != nil {
+	if err := insights.GenerateInsight(r.Context(), userIdentifier, allTransactions); err != nil {
 		writeError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -146,7 +170,13 @@ func syncTransactionsHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func getInsightsHandler(w http.ResponseWriter, r *http.Request) {
-	insight, err := repository.GetInsightByUserID(r.Context(), userID)
+	userIdentifier, authenticated := finsightAuth.AuthenticatedUserID(r.Context())
+	if !authenticated {
+		writeError(w, http.StatusUnauthorized, "unauthenticated")
+		return
+	}
+
+	insight, err := repository.GetInsightByUserID(r.Context(), userIdentifier)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -161,7 +191,13 @@ func getInsightsHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func getTransactionsHandler(w http.ResponseWriter, r *http.Request) {
-	txns, err := repository.GetTransactionsByUserID(r.Context(), userID)
+	userIdentifier, authenticated := finsightAuth.AuthenticatedUserID(r.Context())
+	if !authenticated {
+		writeError(w, http.StatusUnauthorized, "unauthenticated")
+		return
+	}
+
+	txns, err := repository.GetTransactionsByUserID(r.Context(), userIdentifier)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, err.Error())
 		return

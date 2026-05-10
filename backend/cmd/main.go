@@ -10,6 +10,7 @@ import (
 
 	"github.com/AntVith/FinSight/backend/api"
 	"github.com/AntVith/FinSight/backend/db"
+	finsightAuth "github.com/AntVith/FinSight/backend/internal/auth"
 	"github.com/AntVith/FinSight/backend/internal/plaid"
 )
 
@@ -21,7 +22,12 @@ func main() {
 	db.Connect()
 	plaid.Init()
 
-	router := api.NewRouter()
+	authService, err := finsightAuth.NewFromEnv()
+	if err != nil {
+		log.Fatalf("error initializing auth service: %v", err)
+	}
+
+	router := api.NewRouter(authService)
 
 	port := os.Getenv("PORT")
 	if port == "" {

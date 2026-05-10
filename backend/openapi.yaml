@@ -6,9 +6,10 @@ info:
     Connects to bank accounts via Plaid Link, syncs transactions,
     and generates AI-powered financial insights.
 
-    **Authentication:** Currently uses a hardcoded user_id = 1 for
-    demo purposes. Production would use JWT middleware to extract
-    user_id from request context, enforcing data isolation per user.
+    **Authentication:** Register or login yields a short-lived *access*
+    JWT (`Authorization: Bearer …`) plus a longer-lived opaque
+    `refresh_token` stored server-side under `SHA-256(raw)` in Postgres.
+    Plaid linking, sync, insights, and transaction listing require Bearer auth.
   version: 1.0.0
   contact:
     name: Anthony Vithayathil
@@ -29,8 +30,118 @@ tags:
     description: Transaction sync and retrieval
   - name: insights
     description: AI-generated financial insights
+  - name: auth
+    description: Registration, login, and token rotation
 
 paths:
+  /api/auth/register:
+    post:
+      tags: [auth]
+      summary: Register a password-backed account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  minLength: 10
+                first_name:
+                  type: string
+                last_name:
+                  type: string
+      responses:
+        '201':
+          description: Account created — returns bearer + rotated refresh payloads
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthTokenEnvelope'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          description: Duplicate email address
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/auth/login:
+    post:
+      tags: [auth]
+      summary: Obtain tokens with password credentials
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthTokenEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/auth/refresh:
+    post:
+      tags: [auth]
+      summary: Rotate refresh token and mint a fresh access JWT
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refresh_token]
+              properties:
+                refresh_token:
+                  type: string
+      responses:
+        '200':
+          description: New opaque refresh token replaces the consumed one atomically in the database
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RefreshOnlyEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/auth/logout:
+    post:
+      tags: [auth]
+      summary: Revoke a stored refresh hash (clients should discard bearer tokens locally)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refresh_token]
+              properties:
+                refresh_token:
+                  type: string
+      responses:
+        '204':
+          description: Successful revoke (still accepts unknown tokens gracefully)
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
   /api/health:
     get:
       tags: [health]
@@ -53,12 +164,16 @@ paths:
 
   /api/link/token:
     get:
+      security:
+        - BearerAuth: []
       tags: [link]
       summary: Create Plaid link token
       description: |
         Generates a short-lived link_token used to initialize Plaid Link
         on the frontend. The token expires after 30 minutes.
       responses:
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '200':
           description: Link token created successfully
           content:
@@ -75,6 +190,8 @@ paths:
 
   /api/link/exchange:
     post:
+      security:
+        - BearerAuth: []
       tags: [link]
       summary: Exchange public token
       description: |
@@ -111,11 +228,15 @@ paths:
                     example: success
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '500':
           $ref: '#/components/responses/InternalError'
 
   /api/transactions/sync:
     post:
+      security:
+        - BearerAuth: []
       tags: [transactions]
       summary: Sync transactions
       description: |
@@ -145,11 +266,15 @@ paths:
                 $ref: '#/components/schemas/Error'
               example:
                 error: no linked accounts found
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '500':
           $ref: '#/components/responses/InternalError'
 
   /api/transactions:
     get:
+      security:
+        - BearerAuth: []
       tags: [transactions]
       summary: Get all transactions
       description: |
@@ -164,11 +289,15 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Transaction'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '500':
           $ref: '#/components/responses/InternalError'
 
   /api/insights:
     get:
+      security:
+        - BearerAuth: []
       tags: [insights]
       summary: Get financial insights
       description: |
@@ -189,11 +318,57 @@ paths:
                       status:
                         type: string
                         example: no insights yet
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '500':
           $ref: '#/components/responses/InternalError'
 
 components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
   schemas:
+    AuthTokenEnvelope:
+      type: object
+      required: [access_token, refresh_token, token_type, expires_in, user]
+      properties:
+        access_token:
+          type: string
+        refresh_token:
+          type: string
+        token_type:
+          type: string
+          example: Bearer
+        expires_in:
+          type: integer
+          format: int64
+          description: Access token TTL in seconds from issuance
+        user:
+          type: object
+          required: [id, email]
+          properties:
+            id:
+              type: integer
+            email:
+              type: string
+
+    RefreshOnlyEnvelope:
+      type: object
+      required: [access_token, refresh_token, token_type, expires_in]
+      properties:
+        access_token:
+          type: string
+        refresh_token:
+          type: string
+        token_type:
+          type: string
+          example: Bearer
+        expires_in:
+          type: integer
+          format: int64
+
     Transaction:
       type: object
       properties:
@@ -332,3 +507,12 @@ components:
             $ref: '#/components/schemas/Error'
           example:
             error: internal server error
+
+    Unauthorized:
+      description: Missing or invalid Bearer access token when calling a protected endpoint
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: invalid or expired access token

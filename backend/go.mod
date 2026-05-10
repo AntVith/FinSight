@@ -4,9 +4,11 @@ go 1.26.1
 
 require (
 	github.com/go-chi/chi/v5 v5.2.5
+	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/joho/godotenv v1.5.1
 	github.com/lib/pq v1.12.3
 	github.com/plaid/plaid-go/v20 v20.1.0
+	golang.org/x/crypto v0.14.0
 )
 
 require (
