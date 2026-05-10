@@ -9,12 +9,12 @@ import (
 )
 
 type Item struct {
-	ID                 int
-	UserID             int
-	PlaidItemID        string
-	PlaidAccessToken   string
-	Cursor             string
-	InstitutionName    string
+	ID               int
+	UserID           int
+	PlaidItemID      string
+	PlaidAccessToken string
+	Cursor           string
+	InstitutionName  string
 }
 
 func SaveItem(ctx context.Context, userID int, accessToken string, itemID string, institutionName string) error {

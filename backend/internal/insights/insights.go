@@ -32,10 +32,10 @@ type claudeResponse struct {
 }
 
 type insightOutput struct {
-	Summary         string                    	 `json:"summary"`
+	Summary         string                       `json:"summary"`
 	TopCategories   []repository.CategorySummary `json:"top_categories"`
 	Anomalies       []repository.Anomaly         `json:"anomalies"`
-	Recommendations []string                  	 `json:"recommendations"`
+	Recommendations []string                     `json:"recommendations"`
 }
 
 func GenerateInsight(ctx context.Context, userID int, transactions []repository.Transaction) error {
