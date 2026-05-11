@@ -10,3 +10,11 @@
   --color-brand-600: #4f46e5;
   --color-brand-700: #4338ca;
 }
+
+@utility surface-card {
+  @apply rounded-[2rem] border border-gray-100/80 dark:border-gray-800/80 bg-white/90 dark:bg-gray-950/70 backdrop-blur-xl;
+}
+
+@utility gradient-halo-soft {
+  @apply bg-gradient-to-br from-brand-600/20 via-purple-500/35 to-transparent;
+}

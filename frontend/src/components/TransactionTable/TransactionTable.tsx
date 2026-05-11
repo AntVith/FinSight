@@ -25,7 +25,10 @@ export const TransactionTable = ({ transactions }: Props) => {
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
 
   useEffect(() => {
-    setAmountRange([0, maxAmount])
+    const rangeNormalizingHandle = window.setTimeout(() => {
+      setAmountRange([0, maxAmount])
+    }, 0)
+    return () => window.clearTimeout(rangeNormalizingHandle)
   }, [maxAmount])
 
   const uniqueCategories = useMemo(
@@ -53,7 +56,10 @@ export const TransactionTable = ({ transactions }: Props) => {
   }, [transactions, filterCategory, filterMerchant, filterPending, dateFrom, dateTo, amountRange])
 
   useEffect(() => {
-    setVisibleCount(PAGE_SIZE)
+    const pagingResetHandle = window.setTimeout(() => {
+      setVisibleCount(PAGE_SIZE)
+    }, 0)
+    return () => window.clearTimeout(pagingResetHandle)
   }, [filterCategory, filterMerchant, filterPending, dateFrom, dateTo, amountRange])
 
   const hasActiveFilters =
@@ -92,7 +98,7 @@ export const TransactionTable = ({ transactions }: Props) => {
         )}
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
         <select
           className={inputClass}
           value={filterCategory}
@@ -131,15 +137,15 @@ export const TransactionTable = ({ transactions }: Props) => {
           <option value="true">Pending</option>
         </select>
 
-        <div className="flex gap-2 col-span-2 md:col-span-1">
+        <div className="flex gap-2 col-span-2 md:col-span-2 min-w-0">
           <input
-            className={inputClass}
+            className={`${inputClass} min-w-0`}
             type="date"
             value={dateFrom}
             onChange={(e) => setDateFrom(e.target.value)}
           />
           <input
-            className={inputClass}
+            className={`${inputClass} min-w-0`}
             type="date"
             value={dateTo}
             onChange={(e) => setDateTo(e.target.value)}
@@ -151,7 +157,7 @@ export const TransactionTable = ({ transactions }: Props) => {
         <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mb-2">
           <span>Amount range</span>
           <span>
-            {formatCurrency(amountRange[0])} — {formatCurrency(amountRange[1])}
+            {formatCurrency(amountRange[0])} to {formatCurrency(amountRange[1])}
           </span>
         </div>
         <Slider
@@ -204,7 +210,7 @@ export const TransactionTable = ({ transactions }: Props) => {
                     {formatCategoryName(t.CategoryPrimary)}
                   </td>
                   <td
-                    className={`px-4 py-3 text-right font-semibold ${
+                    className={`px-4 py-3 text-right font-semibold font-mono tabular-nums ${
                       t.Amount > 0 ? 'text-red-500' : 'text-emerald-600'
                     }`}
                   >
