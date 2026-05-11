@@ -1,7 +1,7 @@
 import { usePlaidLinkHook } from '../../hooks/usePlaidLink'
 
 interface Props {
-  onSuccess: () => Promise<void>
+  onSuccess: () => void | Promise<void>
 }
 
 export const LinkButton = ({ onSuccess }: Props) => {

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
@@ -15,11 +16,16 @@ import (
 )
 
 func main() {
-	if err := godotenv.Load(); err != nil {
-		log.Fatal("error loading .env file")
-	}
+	// godotenv.Load is best-effort: production hosts inject env vars directly,
+	// so a missing .env file is fine and we keep booting.
+	_ = godotenv.Load()
 
 	db.Connect()
+
+	if err := db.RunMigrations(context.Background()); err != nil {
+		log.Fatalf("error running database migrations: %v", err)
+	}
+
 	plaid.Init()
 
 	authService, err := finsightAuth.NewFromEnv()

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { usePlaidLink } from 'react-plaid-link'
+import { usePlaidLink, type PlaidLinkOnSuccessMetadata } from 'react-plaid-link'
 import { exchangePublicToken, fetchLinkToken } from '../api/client'
 
 interface UsePlaidLinkReturn {
@@ -9,7 +9,7 @@ interface UsePlaidLinkReturn {
   open: () => void
 }
 
-export const usePlaidLinkHook = (onSuccess: () => void): UsePlaidLinkReturn => {
+export const usePlaidLinkHook = (onSuccess: () => void | Promise<void>): UsePlaidLinkReturn => {
   const [linkToken, setLinkToken] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -20,7 +20,7 @@ export const usePlaidLinkHook = (onSuccess: () => void): UsePlaidLinkReturn => {
         setIsLoading(true)
         const data = await fetchLinkToken()
         setLinkToken(data.link_token)
-      } catch (err) {
+      } catch {
         setError('Failed to initialize Plaid Link. Please try again.')
       } finally {
         setIsLoading(false)
@@ -31,12 +31,14 @@ export const usePlaidLinkHook = (onSuccess: () => void): UsePlaidLinkReturn => {
   }, [])
 
   const handleSuccess = useCallback(
-    async (publicToken: string, metadata: any) => {
+    async (publicToken: string, metadata: PlaidLinkOnSuccessMetadata) => {
       try {
         setIsLoading(true)
-        await exchangePublicToken(publicToken, metadata.institution.name)
-        onSuccess()
-      } catch (err) {
+        const institutionLabel =
+          metadata.institution?.name?.trim() || 'Linked institution'
+        await exchangePublicToken(publicToken, institutionLabel)
+        await onSuccess()
+      } catch {
         setError('Failed to link account. Please try again.')
       } finally {
         setIsLoading(false)
@@ -54,6 +56,8 @@ export const usePlaidLinkHook = (onSuccess: () => void): UsePlaidLinkReturn => {
     isReady: ready,
     isLoading,
     error,
-    open,
+    open: () => {
+      open()
+    },
   }
 }

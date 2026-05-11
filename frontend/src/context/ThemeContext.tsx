@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components -- shared theme context + hook exports */
 import { createContext, useContext, useEffect, useState } from 'react'
 
 interface ThemeContextValue {

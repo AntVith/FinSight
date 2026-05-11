@@ -19,7 +19,7 @@ servers:
   - url: http://localhost:8080
     description: Local development
   - url: https://your-railway-url.railway.app
-    description: Production — Railway (MVP deployment)
+    description: Production, Railway (MVP deployment)
 
 tags:
   - name: health
@@ -58,7 +58,7 @@ paths:
                   type: string
       responses:
         '201':
-          description: Account created — returns bearer + rotated refresh payloads
+          description: Account created, returns bearer + rotated refresh payloads
           content:
             application/json:
               schema:
@@ -197,7 +197,7 @@ paths:
       description: |
         Exchanges the temporary public_token received from Plaid Link
         for a permanent access_token. The access_token is encrypted
-        and stored server-side — never returned to the client.
+        and stored server-side, never returned to the client.
         Automatically saves the linked Item to the database.
       requestBody:
         required: true
@@ -242,7 +242,7 @@ paths:
       description: |
         Syncs transactions for all linked accounts using Plaid's
         /transactions/sync cursor-based endpoint. Handles Plaid
-        pagination internally — clients never manage page state.
+        pagination internally, clients never manage page state.
         After sync, synchronously triggers Claude AI to regenerate
         financial insights. Note: adds 3-5 seconds of latency.
         Production should use async job queue for insight generation.

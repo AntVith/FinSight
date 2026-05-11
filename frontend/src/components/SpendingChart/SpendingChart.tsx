@@ -57,7 +57,7 @@ export const SpendingChart = ({ categories }: Props) => {
   const total = categories.reduce((sum, c) => sum + c.total_amount, 0)
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 h-full">
+    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 text-gray-900 dark:text-gray-50">
       <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-50 mb-4">
         Spending by Category
       </h2>
@@ -70,17 +70,32 @@ export const SpendingChart = ({ categories }: Props) => {
             <Label
               value={formatCurrency(total)}
               position="center"
-              dy={-8}
-              style={{ fontSize: '15px', fontWeight: 600, fill: 'currentColor' }}
+              dy={-10}
+              style={{ fontSize: '22px', fontWeight: 700, fill: 'currentColor', letterSpacing: '-0.02em' }}
             />
             <Label
               value="Total Spent"
               position="center"
-              dy={10}
-              style={{ fontSize: '11px', fill: '#6b7280' }}
+              dy={14}
+              style={{ fontSize: '11px', fill: 'currentColor', fillOpacity: 0.55, letterSpacing: '0.08em', textTransform: 'uppercase' }}
             />
           </Pie>
-          <Tooltip formatter={(value: number) => formatCurrency(value)} />
+          <Tooltip
+            formatter={(currencyValue) =>
+              formatCurrency(
+                typeof currencyValue === 'number'
+                  ? currencyValue
+                  : Number(currencyValue ?? 0)
+              )
+            }
+            contentStyle={{
+              borderRadius: 16,
+              border: '1px solid rgb(229 231 235)',
+              boxShadow: '0 12px 30px rgb(76 73 239 / 0.15)',
+              background: 'rgba(255,255,255,0.98)',
+              color: '#0f172a',
+            }}
+          />
           <Legend
             verticalAlign="top"
             align="right"

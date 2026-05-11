@@ -19,9 +19,12 @@ export const InsightCard = ({ insight }: Props) => {
       </div>
 
       {insight.TopCategories.length > 0 && (
-        <div className="mb-4">
-          <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
-            Top Spending Categories
+        <div className="mb-6">
+          <h3 className="flex items-center gap-2.5 mb-3">
+            <span aria-hidden className="block w-1 h-4 rounded-full bg-gradient-to-b from-brand-500 to-purple-500" />
+            <span className="text-[13px] font-bold tracking-[0.2em] uppercase text-gray-800 dark:text-gray-100">
+              Top spending categories
+            </span>
           </h3>
           <div className="grid grid-cols-2 gap-2">
             {insight.TopCategories.map((cat) => (
@@ -41,9 +44,12 @@ export const InsightCard = ({ insight }: Props) => {
       )}
 
       {insight.Recommendations.length > 0 && (
-        <div className="mb-4">
-          <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
-            Recommendations
+        <div className="mb-6">
+          <h3 className="flex items-center gap-2.5 mb-3">
+            <span aria-hidden className="block w-1 h-4 rounded-full bg-gradient-to-b from-brand-500 to-purple-500" />
+            <span className="text-[13px] font-bold tracking-[0.2em] uppercase text-gray-800 dark:text-gray-100">
+              Recommendations
+            </span>
           </h3>
           <ol className="space-y-1 list-decimal list-inside">
             {insight.Recommendations.map((rec, i) => (
@@ -57,8 +63,11 @@ export const InsightCard = ({ insight }: Props) => {
 
       {insight.Anomalies.length > 0 && (
         <div>
-          <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
-            Anomalies
+          <h3 className="flex items-center gap-2.5 mb-3">
+            <span aria-hidden className="block w-1 h-4 rounded-full bg-gradient-to-b from-rose-500 to-red-500" />
+            <span className="text-[13px] font-bold tracking-[0.2em] uppercase text-gray-800 dark:text-gray-100">
+              Anomalies
+            </span>
           </h3>
           <div className="space-y-2">
             {insight.Anomalies.map((anomaly, i) => (

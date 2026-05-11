@@ -11,3 +11,16 @@ export const formatDate = (dateStr: string): string => {
   const yyyy = d.getFullYear()
   return `${mm}/${dd}/${yyyy}`
 }
+
+/** Long-form date for dashboards, e.g. "May 10, 2026"; invalid input falls back to supplied string slice. */
+export const formatDisplayedCalendarDateMedium = (isoDateInput: string): string => {
+  const parsedMoment = new Date(isoDateInput)
+  if (Number.isNaN(parsedMoment.valueOf())) {
+    return isoDateInput.slice(0, 10)
+  }
+  return parsedMoment.toLocaleDateString(undefined, {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  })
+}

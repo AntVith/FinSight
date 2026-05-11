@@ -3,6 +3,7 @@ import { formatCurrency } from '../../utils/formatters'
 
 interface Props {
   transactions: Transaction[]
+  introductoryCaptionRibbon?: string
 }
 
 interface StatCardProps {
@@ -12,13 +13,24 @@ interface StatCardProps {
 }
 
 const StatCard = ({ label, value, valueClassName }: StatCardProps) => (
-  <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-    <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{label}</p>
-    <p className={`text-2xl font-bold ${valueClassName}`}>{value}</p>
+  <div className="group relative overflow-hidden bg-white dark:bg-gray-950 rounded-[1.15rem] border border-gray-100 dark:border-gray-800 p-4 sm:p-6 shadow-[0_2px_8px_-2px_rgb(79_70_229_/_0.08)]">
+    <span
+      aria-hidden
+      className="pointer-events-none absolute inset-x-4 sm:inset-x-6 top-0 h-px opacity-70 bg-gradient-to-r from-transparent via-brand-600/55 to-transparent"
+    />
+    <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400 mb-2">
+      {label}
+    </p>
+    <p className={`text-xl sm:text-2xl lg:text-3xl font-semibold tabular-nums tracking-tight truncate ${valueClassName}`}>
+      {value}
+    </p>
   </div>
 )
 
-export const FinancialSummary = ({ transactions }: Props) => {
+export const FinancialSummary = ({
+  transactions,
+  introductoryCaptionRibbon,
+}: Props) => {
   const moneyIn = transactions
     .filter((t) => t.Amount < 0)
     .reduce((sum, t) => sum + Math.abs(t.Amount), 0)
@@ -31,7 +43,13 @@ export const FinancialSummary = ({ transactions }: Props) => {
   const transactionCount = transactions.length
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+    <div className="space-y-4">
+      {introductoryCaptionRibbon && (
+        <p className="text-xs uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500 font-semibold">
+          {introductoryCaptionRibbon}
+        </p>
+      )}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
       <StatCard
         label="Total Money In"
         value={formatCurrency(moneyIn)}
@@ -50,8 +68,9 @@ export const FinancialSummary = ({ transactions }: Props) => {
       <StatCard
         label="Transactions"
         value={String(transactionCount)}
-        valueClassName="text-gray-900 dark:text-gray-50"
+        valueClassName="text-gray-950 dark:text-gray-50"
       />
+      </div>
     </div>
   )
 }
