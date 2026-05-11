@@ -1,63 +1,101 @@
-import { useContext, useEffect, useState } from 'react'
-import { BrowserRouter, Navigate, Route, Routes, useNavigate } from 'react-router-dom'
-import { syncTransactions } from './api/client'
+import { useCallback, useContext, useState } from 'react'
+import { Route, Routes, useLocation, useNavigate } from 'react-router-dom'
+
 import { Navbar } from './components/Navbar/Navbar'
+import { RequireAuthenticatedRouteBoundary } from './components/RequireAuth/RequireAuth'
+import { RouteErrorBoundary } from './components/RouteErrorBoundary/RouteErrorBoundary'
 import { ThemeContext, ThemeProvider } from './context/ThemeContext'
+import { AuthProvider, useAuthenticatedSession } from './context/AuthContext'
 import { Connect } from './views/Connect'
 import { Dashboard } from './views/Dashboard'
+import { Landing } from './views/Landing'
+import { Login } from './views/Login'
+import { Register } from './views/Register'
 
-const AppContent = () => {
+const marketingPathnameCollection = new Set(['/', '/login', '/register'])
+
+export const AppRoutesTree = () => {
+  const locationPathname = useLocation().pathname
   const navigate = useNavigate()
-  const { isDark, toggleDark } = useContext(ThemeContext)
-  const [isConnected, setIsConnected] = useState(false)
-  const [isSyncing, setIsSyncing] = useState(false)
-  const [syncError, setSyncError] = useState<string | null>(null)
+  const resolvedThemeLayer = useContext(ThemeContext)
 
-  useEffect(() => {
-    if (localStorage.getItem('finsight_connected')) {
-      setIsConnected(true)
-    }
-  }, [])
+  if (!resolvedThemeLayer) {
+    throw new Error('ThemeProvider must wrap AppRoutesTree before render')
+  }
 
-  const handleConnect = async () => {
-    setIsSyncing(true)
-    setSyncError(null)
+  const { isDark, toggleDark } = resolvedThemeLayer
+
+  const {
+    authenticatedUser,
+    signOutAndClearStoredSession,
+    enterDemoSandboxSession,
+    demoCredentialsConfiguredOnBuild,
+  } = useAuthenticatedSession()
+
+  const [marketingSandboxShortcutBusy, setMarketingSandboxShortcutBusy] = useState(false)
+
+  const presentationVariant = marketingPathnameCollection.has(locationPathname)
+    ? 'marketing'
+    : 'application'
+
+  const handleMarketingSandboxShortcut = useCallback(async () => {
+    setMarketingSandboxShortcutBusy(true)
     try {
-      await syncTransactions()
-      setIsConnected(true)
-      localStorage.setItem('finsight_connected', 'true')
-      navigate('/dashboard')
-    } catch (err) {
-      console.error('Failed to sync transactions after connect:', err)
-      setSyncError('Failed to sync transactions. Please try again.')
+      await enterDemoSandboxSession()
+      navigate('/dashboard', { replace: true })
+    } catch {
+      window.alert(
+        'Demo login failed. provide VITE_DEMO_EMAIL and VITE_DEMO_PASSWORD for a seeded account.'
+      )
     } finally {
-      setIsSyncing(false)
+      setMarketingSandboxShortcutBusy(false)
     }
-  }
+  }, [enterDemoSandboxSession, navigate])
 
-  const handleDisconnect = () => {
-    setIsConnected(false)
-    localStorage.removeItem('finsight_connected')
-    navigate('/')
-  }
+  const handleTerminateApplicationSession = useCallback(async () => {
+    await signOutAndClearStoredSession()
+    navigate('/', { replace: true })
+  }, [navigate, signOutAndClearStoredSession])
 
   return (
     <>
-      <Navbar onDisconnect={handleDisconnect} isDark={isDark} toggleDark={toggleDark} />
-      <Routes>
-        <Route
-          path="/"
-          element={
-            <Connect onSuccess={handleConnect} syncError={syncError} isSyncing={isSyncing} />
-          }
-        />
-        <Route
-          path="/dashboard"
-          element={
-            isConnected ? <Dashboard isSyncing={isSyncing} /> : <Navigate to="/" replace />
-          }
-        />
-      </Routes>
+      <Navbar
+        presentationVariant={presentationVariant}
+        isDarkAppearance={isDark}
+        onToggleAppearance={toggleDark}
+        authenticatedUserMailbox={authenticatedUser?.email}
+        onTerminateSessionClicked={
+          presentationVariant === 'application' ? handleTerminateApplicationSession : undefined
+        }
+        sandboxDemoShortcutEnabled={demoCredentialsConfiguredOnBuild}
+        sandboxDemoBusy={marketingSandboxShortcutBusy}
+        onSandboxDemoShortcutTriggered={
+          presentationVariant === 'marketing' ? handleMarketingSandboxShortcut : undefined
+        }
+      />
+      <RouteErrorBoundary>
+        <Routes>
+          <Route path="/" element={<Landing />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route
+            path="/connect"
+            element={
+              <RequireAuthenticatedRouteBoundary>
+                <Connect />
+              </RequireAuthenticatedRouteBoundary>
+            }
+          />
+          <Route
+            path="/dashboard"
+            element={
+              <RequireAuthenticatedRouteBoundary>
+                <Dashboard />
+              </RequireAuthenticatedRouteBoundary>
+            }
+          />
+        </Routes>
+      </RouteErrorBoundary>
     </>
   )
 }
@@ -65,10 +103,9 @@ const AppContent = () => {
 export const App = () => {
   return (
     <ThemeProvider>
-      <BrowserRouter>
-        <AppContent />
-      </BrowserRouter>
+      <AuthProvider>
+        <AppRoutesTree />
+      </AuthProvider>
     </ThemeProvider>
   )
 }
-
