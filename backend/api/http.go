@@ -1,9 +1,14 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
+	"os"
+	"strings"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -14,6 +19,29 @@ import (
 	"github.com/AntVith/FinSight/backend/internal/plaid"
 	"github.com/AntVith/FinSight/backend/internal/transactions"
 )
+
+// configuredCorsOriginAllowlist is computed once at process boot from the
+// ALLOWED_ORIGINS environment variable (comma-separated). When unset, we fall
+// back to a localhost-only allowlist suitable for development.
+var configuredCorsOriginAllowlist = buildCorsOriginAllowlistFromEnv()
+
+func buildCorsOriginAllowlistFromEnv() map[string]bool {
+	rawAllowlist := strings.TrimSpace(os.Getenv("ALLOWED_ORIGINS"))
+	if rawAllowlist == "" {
+		return map[string]bool{
+			"http://localhost:3000": true,
+			"http://localhost:5173": true,
+		}
+	}
+	resolvedAllowlist := make(map[string]bool)
+	for _, rawCandidate := range strings.Split(rawAllowlist, ",") {
+		trimmedCandidate := strings.TrimSpace(rawCandidate)
+		if trimmedCandidate != "" {
+			resolvedAllowlist[trimmedCandidate] = true
+		}
+	}
+	return resolvedAllowlist
+}
 
 func NewRouter(authService *finsightAuth.Service) http.Handler {
 	r := chi.NewRouter()
@@ -47,13 +75,10 @@ func NewRouter(authService *finsightAuth.Service) http.Handler {
 func corsMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		origin := r.Header.Get("Origin")
-		allowedOrigins := map[string]bool{
-			"http://localhost:3000": true,
-			"http://localhost:5173": true,
-		}
 
-		if allowedOrigins[origin] {
+		if configuredCorsOriginAllowlist[origin] {
 			w.Header().Set("Access-Control-Allow-Origin", origin)
+			w.Header().Set("Vary", "Origin")
 		}
 
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
@@ -161,12 +186,18 @@ func syncTransactionsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := insights.GenerateInsight(r.Context(), userIdentifier, allTransactions); err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
-		return
-	}
+	// Fire-and-forget Claude insight regeneration so the HTTP response returns
+	// the moment Plaid is reconciled. Frontend polls /api/insights to surface
+	// the fresh narrative once the model finishes drafting.
+	go func(uid int, ledger []repository.Transaction) {
+		bgCtx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
+		defer cancel()
+		if err := insights.GenerateInsight(bgCtx, uid, ledger); err != nil {
+			log.Printf("background insight generation failed for user %d: %v", uid, err)
+		}
+	}(userIdentifier, allTransactions)
 
-	writeJSON(w, http.StatusOK, map[string]string{"status": "sync complete"})
+	writeJSON(w, http.StatusAccepted, map[string]string{"status": "sync accepted, insights regenerating"})
 }
 
 func getInsightsHandler(w http.ResponseWriter, r *http.Request) {
