@@ -1,3 +1,38 @@
+# FinSight frontend
+
+FinSight renders a landing experience, bearer-authenticated dashboards, Plaid Link, and AI insight panels against the Go API.
+
+## Environment
+
+Copy [`.env.example`](.env.example) to `.env` (or `.env.local`) and populate:
+
+| Variable | Purpose |
+|----------|---------|
+| `VITE_API_URL` | Base URL of the API (usually `http://localhost:8080`). |
+| `VITE_DEMO_EMAIL` / `VITE_DEMO_PASSWORD` | Powers the navbar **Demo user** shortcut (calls `/api/auth/login`). Must match `backend/.env` `DEMO_USER_EMAIL` / `DEMO_USER_PASSWORD` and a seeded account. Anything prefixed with `VITE_` ships in the bundle. treat these as sandbox-only material. |
+
+## Seeding the demo user
+
+The backend ships a one-shot Go command that creates the demo FinSight account **and** auto-links First Platypus Bank via Plaid sandbox so the demo dashboard hydrates with data on the first click of **Demo user**:
+
+```bash
+cd backend
+go run ./cmd/seeddemo
+```
+
+It is idempotent. safe to re-run. Flags:
+
+- `--skip-plaid`. only create the FinSight account, do not link Plaid.
+- `--skip-sync`. link the bank but skip the initial transaction sync + insight regeneration (useful when `CLAUDE_API_KEY` is absent).
+
+Plaid sandbox Link credentials (any institution): `user_good` / `pass_good`. The seed command never opens Link. it uses `/sandbox/public_token/create` directly.
+
+## UX notes
+
+The dashboard renders transactions first (“as of …” watermark derived from ledger max date) and lazily splits the Insight card chunk so Claude markdown rendering does not compete with shell paint.
+
+---
+
 # React + TypeScript + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
