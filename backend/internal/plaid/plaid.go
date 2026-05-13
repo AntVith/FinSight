@@ -2,7 +2,9 @@ package plaid
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"log"
 	"os"
 
 	"github.com/plaid/plaid-go/v20/plaid"
@@ -45,6 +47,12 @@ func CreateLinkToken(ctx context.Context, userID string) (string, error) {
 
 	resp, _, err := plaidClient.PlaidApi.LinkTokenCreate(ctx).LinkTokenCreateRequest(*request).Execute()
 	if err != nil {
+		var openAPIErr *plaid.GenericOpenAPIError
+		if errors.As(err, &openAPIErr) {
+			log.Printf("plaid /link/token/create error: user=%s body=%s", userID, string(openAPIErr.Body()))
+		} else {
+			log.Printf("plaid /link/token/create error (no body): user=%s err=%v", userID, err)
+		}
 		return "", fmt.Errorf("error creating link token: %w", err)
 	}
 

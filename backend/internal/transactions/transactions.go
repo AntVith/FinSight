@@ -2,7 +2,9 @@ package transactions
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/AntVith/FinSight/backend/db/repository"
@@ -24,6 +26,12 @@ func SyncTransactions(ctx context.Context, item repository.Item) error {
 
 		resp, _, err := plaid.GetClient().PlaidApi.TransactionsSync(ctx).TransactionsSyncRequest(*request).Execute()
 		if err != nil {
+			var openAPIErr *plaidSDK.GenericOpenAPIError
+			if errors.As(err, &openAPIErr) {
+				log.Printf("plaid /transactions/sync error: item_id=%d body=%s", item.ID, string(openAPIErr.Body()))
+			} else {
+				log.Printf("plaid /transactions/sync error (no body): item_id=%d err=%v", item.ID, err)
+			}
 			return fmt.Errorf("error syncing transactions: %w", err)
 		}
 
