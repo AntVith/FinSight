@@ -1,4 +1,4 @@
-# FinSight
+# FinSight - https://finsight-rose.vercel.app/
 
 > Personal finance, decoded by AI. Plaid-linked transactions, Claude-powered insights, and a beautiful dashboard.
 
