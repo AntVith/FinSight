@@ -44,9 +44,7 @@ export const AppRoutesTree = () => {
       await enterDemoSandboxSession()
       navigate('/dashboard', { replace: true })
     } catch {
-      window.alert(
-        'Demo login failed. provide VITE_DEMO_EMAIL and VITE_DEMO_PASSWORD for a seeded account.'
-      )
+      window.alert('Demo login failed. Try signing in manually.')
     } finally {
       setMarketingSandboxShortcutBusy(false)
     }

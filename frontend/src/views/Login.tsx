@@ -62,10 +62,10 @@ export const Login = () => {
       <section className="w-full max-w-md bg-white dark:bg-black/40 backdrop-blur-xl rounded-[1.9rem] border border-gray-100 dark:border-gray-900 p-10 shadow-[0_40px_60px_-20px_rgb(99_102_241_/_0.45)]">
         <header className="mb-10 text-center">
           <p className="text-xs uppercase tracking-[0.35em] text-brand-700 dark:text-brand-300 mb-3">
-            FinSight cockpit
+            Welcome back
           </p>
           <h1 className="text-3xl font-semibold tracking-tighter text-gray-950 dark:text-white">
-            Log in with confidence
+            Sign in
           </h1>
         </header>
 
@@ -117,7 +117,7 @@ export const Login = () => {
               Just browsing?
             </p>
             <p className="text-sm text-gray-700 dark:text-gray-300 mb-3">
-              Skip the form. Open a fully populated demo workspace, no signup needed.
+              Skip the form. Open a fully populated demo, no signup needed.
             </p>
             <button
               type="button"
@@ -125,7 +125,7 @@ export const Login = () => {
               disabled={demoShortcutBusy || formSubmissionBusy}
               className="w-full py-3 rounded-xl font-semibold text-brand-700 dark:text-brand-200 border border-brand-500/50 dark:border-brand-400/50 hover:bg-brand-500/10 disabled:opacity-60 transition"
             >
-              {demoShortcutBusy ? 'Loading demo workspace…' : 'Try the demo'}
+              {demoShortcutBusy ? 'Loading demo…' : 'Try the demo'}
             </button>
           </div>
         )}
@@ -133,7 +133,7 @@ export const Login = () => {
         <p className="mt-10 text-center text-sm text-gray-500 dark:text-gray-400">
           New to FinSight?{' '}
           <Link className="text-brand-700 dark:text-brand-300 hover:underline font-semibold" to="/register">
-            Create your workspace
+            Create an account
           </Link>
         </p>
       </section>
