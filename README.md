@@ -78,6 +78,14 @@ Seed the demo user (idempotent, links First Platypus Bank via Plaid sandbox and 
 go run ./cmd/seeddemo
 ```
 
+If `Update data` fails with a decrypt / Plaid error after rotating `ENCRYPTION_KEY`, or the demo item is stale, replace the link and re-sync:
+
+```bash
+go run ./cmd/seeddemo --force-relink
+```
+
+`ENCRYPTION_KEY` must be exactly 32 characters (`openssl rand -base64 24`). Changing it without `--force-relink` leaves encrypted Plaid tokens unreadable.
+
 ### Frontend
 
 ```bash
@@ -94,8 +102,8 @@ npm run dev           # http://localhost:5173
 
 1. New Railway project → "Deploy from GitHub repo" → point at `backend/`
 2. Provision a PostgreSQL plugin; Railway will inject `DATABASE_URL`
-3. Set env vars: `PLAID_CLIENT_ID`, `PLAID_SECRET`, `PLAID_ENV=sandbox`, `CLAUDE_API_KEY`, `CLAUDE_MODEL`, `JWT_SECRET` (32+ random bytes), `ENCRYPTION_KEY`, `ALLOWED_ORIGINS=https://your-frontend.vercel.app`
-4. Optionally set `DEMO_USER_EMAIL` + `DEMO_USER_PASSWORD` and SSH in once to run `go run ./cmd/seeddemo`
+3. Set env vars: `PLAID_CLIENT_ID`, `PLAID_SECRET`, `PLAID_ENV=sandbox`, `CLAUDE_API_KEY`, `CLAUDE_MODEL`, `JWT_SECRET` (32+ random bytes), `ENCRYPTION_KEY` (exactly 32 chars), `ALLOWED_ORIGINS=https://your-frontend.vercel.app`
+4. Optionally set `DEMO_USER_EMAIL` + `DEMO_USER_PASSWORD`, then seed against the **public** Postgres URL (not `railway run`, which injects the internal hostname): `DATABASE_URL='…' go run ./cmd/seeddemo`. Use `--force-relink` if tokens were encrypted under a previous key.
 5. Migrations apply automatically on first boot
 
 ### Frontend (Vercel)
