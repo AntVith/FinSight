@@ -19,17 +19,16 @@ import {
 } from '../utils/spendingFromTransactions'
 
 const syncPhaseMarqueePhrases = [
-  'Reaching out to Plaid…',
-  'Reconciling fresh transactions…',
-  'Hydrating ledger snapshot…',
+  'Syncing transactions…',
+  'Updating your ledger…',
+  'Almost ready…',
 ] as const
 
 const insightPhaseMarqueePhrases = [
-  'Consulting Claude AI…',
-  'Spotting anomalies in your spending…',
-  'Distilling top categories…',
+  'Generating insights…',
+  'Reviewing your spending…',
+  'Finding unusual charges…',
   'Drafting recommendations…',
-  'Polishing the narrative…',
 ] as const
 
 const INSIGHT_POLL_INTERVAL_MS = 2500
@@ -58,7 +57,7 @@ export const Dashboard = () => {
       const downloadedTransactions = await fetchTransactions()
       setTransactionsLedger(downloadedTransactions)
     } catch {
-      setFatalLedgerErrorMessage('Could not reach your transaction ledger.')
+      setFatalLedgerErrorMessage('Could not load your transactions.')
     } finally {
       setLedgerShellBusy(false)
     }
@@ -190,7 +189,7 @@ export const Dashboard = () => {
       <div className="min-h-[calc(100vh-73px)] bg-slate-50 dark:bg-gray-950 flex items-center justify-center px-6">
         <div className="text-center space-y-3">
           <span className="inline-flex w-12 h-12 border-4 border-brand-600 border-t-transparent rounded-full animate-spin" />
-          <p className="text-gray-500 dark:text-gray-400 tracking-tight">Priming treasury telemetry…</p>
+          <p className="text-gray-500 dark:text-gray-400 tracking-tight">Loading your dashboard…</p>
         </div>
       </div>
     )
@@ -198,7 +197,7 @@ export const Dashboard = () => {
 
   const asOfWatermarkExpression = latestTransactionDayLexical
     ? formatDisplayedCalendarDateMedium(`${latestTransactionDayLexical}T00:00:00Z`)
-    : 'today, awaiting first posted transaction'
+    : 'today'
 
   return (
     <div className="min-h-[calc(100vh-73px)] bg-slate-50 dark:bg-gray-950 px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
@@ -206,15 +205,14 @@ export const Dashboard = () => {
         <header className="flex flex-col md:flex-row md:items-start md:justify-between gap-5 md:gap-6">
           <div>
             <p className="text-[10px] sm:text-xs uppercase tracking-[0.3em] sm:tracking-[0.4em] text-gray-400 dark:text-gray-500 mb-2 sm:mb-3">
-              Command surface
+              Dashboard
             </p>
             <h1 className="text-3xl sm:text-4xl lg:text-[2.85rem] font-semibold tracking-tighter text-gray-950 dark:text-white">
-              Spending intelligence
+              Your spending overview
             </h1>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 sm:mt-3">
               As of{' '}
               <span className="font-semibold text-gray-800 dark:text-gray-200">{asOfWatermarkExpression}</span>
-              , synced transaction ledger snapshot.
             </p>
           </div>
           <div className="flex flex-col items-stretch md:items-end gap-3 w-full md:w-auto">
@@ -237,8 +235,8 @@ export const Dashboard = () => {
             </button>
             <span className="text-xs text-gray-400 dark:text-gray-600 text-center md:text-right">
               {anySyncPulseActive
-                ? 'Plaid reconciles synchronously · Claude narrates in background.'
-                : 'Respectful pacing, one hourly sync fingerprint.'}
+                ? 'Pulling the latest transactions and refreshing insights…'
+                : 'You can refresh about once per hour.'}
             </span>
           </div>
         </header>
@@ -272,7 +270,7 @@ export const Dashboard = () => {
           </div>
         )}
 
-        <FinancialSummary introductoryCaptionRibbon="Capital flow synopsis" transactions={transactionsLedger} />
+        <FinancialSummary introductoryCaptionRibbon="Summary" transactions={transactionsLedger} />
 
         {transactionsLedger.length === 0 ? (
           <section className="relative overflow-hidden rounded-[2rem] border border-gray-200/80 dark:border-white/10 bg-white/80 dark:bg-white/[0.03] backdrop-blur px-8 py-14 sm:px-14">
@@ -290,13 +288,13 @@ export const Dashboard = () => {
               </span>
               <div>
                 <p className="text-xs uppercase tracking-[0.35em] text-brand-700 dark:text-brand-300 mb-3">
-                  Awaiting first ingestion
+                  Get started
                 </p>
                 <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight text-gray-950 dark:text-white">
-                  Your dashboard hydrates the moment a bank is linked
+                  Connect a bank to see your dashboard
                 </h2>
                 <p className="text-sm text-gray-500 dark:text-gray-400 mt-3 max-w-xl mx-auto">
-                  Connect a sandbox or live institution to populate KPI tiles, render category drift, and unlock conversational AI guardrails on this canvas.
+                  Link an account to populate your summary, spending charts, and AI insights.
                 </p>
               </div>
               <div className="flex flex-wrap items-center justify-center gap-3">
@@ -306,9 +304,6 @@ export const Dashboard = () => {
                 >
                   Connect bank
                 </Link>
-                <span className="text-xs text-gray-400 dark:text-gray-500">
-                  Sandbox credentials work out of the box.
-                </span>
               </div>
             </div>
           </section>
@@ -323,7 +318,7 @@ export const Dashboard = () => {
                 </div>
               )}
               <section>
-                <h2 className="text-xs uppercase tracking-[0.3em] text-gray-400 mb-6">Ledger detail</h2>
+                <h2 className="text-xs uppercase tracking-[0.3em] text-gray-400 mb-6">Recent transactions</h2>
                 <TransactionTable transactions={transactionsLedger} />
               </section>
             </div>
@@ -336,8 +331,9 @@ export const Dashboard = () => {
 
               {!insightRendered && !insightsRefreshBusy && (
                 <div className="rounded-[1.7rem] border border-dashed border-gray-300 dark:border-gray-800 p-10 text-center text-gray-500 dark:text-gray-400 bg-white/85 dark:bg-gray-950/60">
-                  Insight fabric idle, invoke <strong className="text-gray-950 dark:text-gray-50">Update data</strong> after your
-                  inaugural sync completes.
+                  No insights yet. Link a bank and tap{' '}
+                  <strong className="text-gray-950 dark:text-gray-50">Update data</strong> to
+                  generate your first summary.
                 </div>
               )}
 
@@ -355,14 +351,10 @@ export const Dashboard = () => {
                       insightsRefreshBusy ? 'opacity-80' : 'opacity-100'
                     }`}
                   >
-                    <Suspense fallback={<InsightRegionalSkeletonFence supportingStatusLabel="Materializing prose…" />}>
+                    <Suspense fallback={<InsightRegionalSkeletonFence supportingStatusLabel="Loading insights…" />}>
                       <LazyHeavyInsightRenderer insight={insightRendered} />
                     </Suspense>
                   </div>
-                  <p className="text-xs uppercase tracking-[0.3em] text-gray-400 mt-4 text-center">
-                    Generated{' '}
-                    {formatDisplayedCalendarDateMedium(insightRendered.UpdatedAt)}
-                  </p>
                 </div>
               )}
             </section>

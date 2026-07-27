@@ -67,10 +67,10 @@ export const Register = () => {
       <section className="w-full max-w-xl bg-white dark:bg-black/40 backdrop-blur-xl rounded-[1.9rem] border border-gray-100 dark:border-gray-900 shadow-[0_40px_60px_-20px_rgb(99_102_241_/_0.45)] px-12 py-12">
         <header className="mb-12 text-center">
           <p className="uppercase tracking-[0.35em] text-xs text-brand-700 dark:text-brand-300 mb-4">
-            New workspace
+            Create account
           </p>
           <h1 className="text-[2.65rem] font-semibold tracking-tighter text-gray-950 dark:text-white">
-            Provision FinSight
+            Join FinSight
           </h1>
         </header>
 
@@ -127,7 +127,7 @@ export const Register = () => {
               }
             />
             <span className="text-xs block mt-2 text-gray-500 dark:text-gray-400">
-              Passphrases need at least ten characters.
+              Passwords need at least ten characters.
             </span>
           </label>
 
@@ -141,7 +141,7 @@ export const Register = () => {
               disabled={formSubmissionBusy || demoShortcutBusy}
               className="w-full py-4 rounded-2xl font-semibold text-white bg-gradient-to-r from-brand-600 via-brand-700 to-purple-700 shadow-lg shadow-brand-700/30 ring-1 ring-white/15 hover:brightness-110 disabled:opacity-60 disabled:hover:brightness-100 transition"
             >
-              {formSubmissionBusy ? 'Creating your workspace…' : 'Create account'}
+              {formSubmissionBusy ? 'Creating your account…' : 'Create account'}
             </button>
           </div>
         </form>
@@ -152,7 +152,7 @@ export const Register = () => {
               Not ready to commit?
             </p>
             <p className="text-sm text-gray-700 dark:text-gray-300 mb-3">
-              Skip signup. Browse a fully populated demo workspace with seeded transactions and live insights.
+              Skip signup. Browse a fully populated demo with seeded transactions and live insights.
             </p>
             <button
               type="button"
@@ -160,15 +160,15 @@ export const Register = () => {
               disabled={demoShortcutBusy || formSubmissionBusy}
               className="w-full py-3 rounded-xl font-semibold text-brand-700 dark:text-brand-200 border border-brand-500/50 dark:border-brand-400/50 hover:bg-brand-500/10 disabled:opacity-60 transition"
             >
-              {demoShortcutBusy ? 'Loading demo workspace…' : 'Try the demo'}
+              {demoShortcutBusy ? 'Loading demo…' : 'Try the demo'}
             </button>
           </div>
         )}
 
         <p className="mt-12 text-center text-sm text-gray-500 dark:text-gray-400">
-          Already onboard?{' '}
+          Already have an account?{' '}
           <Link className="text-brand-700 dark:text-brand-300 hover:underline font-semibold" to="/login">
-            Sign in to your cockpit
+            Sign in
           </Link>
         </p>
       </section>

@@ -17,17 +17,17 @@ const capabilityCardSpecsRibbon: readonly CapabilityCardSpec[] = [
   {
     glyphPaths: ['M3 21h18', 'M5 21V11l7-4 7 4v10', 'M9 21V13h6v8'],
     eyebrowKicker: 'Bank connectivity',
-    headlineTitle: 'Plaid Link, end-to-end',
+    headlineTitle: 'Connect your bank',
     bodyCopy:
-      'Production-grade OAuth handoff with sandbox + live institution flows, item persistence, and idempotent transaction upserts that survive retries.',
+      'Link your accounts securely with Plaid. Choose from thousands of institutions and pull your transactions in a few taps.',
     reinforcementBadge: '12,000+ institutions',
   },
   {
     glyphPaths: ['M12 2l2.39 6.95L21 11l-6.61 2.05L12 20l-2.39-6.95L3 11l6.61-2.05L12 2z'],
-    eyebrowKicker: 'AI narration',
-    headlineTitle: 'Claude reads your ledger',
+    eyebrowKicker: 'AI insights',
+    headlineTitle: 'AI-powered insights',
     bodyCopy:
-      'Anthropic Claude distills capital flows into the one-paragraph guardrail a CFO would tape to a wall, anomalies, drift, and recommendations included.',
+      'Anthropic Claude turns your spending into a clear summary with top categories, unusual charges, and practical recommendations.',
     reinforcementBadge: 'Anthropic-powered',
   },
   {
@@ -37,33 +37,33 @@ const capabilityCardSpecsRibbon: readonly CapabilityCardSpec[] = [
       'M21 3v5h-5',
       'M3 21v-5h5',
     ],
-    eyebrowKicker: 'Architecture',
-    headlineTitle: 'Async insight pipeline',
+    eyebrowKicker: 'Stay current',
+    headlineTitle: 'Always up to date',
     bodyCopy:
-      'Plaid reconciles in under a second on the user-facing path. Claude regenerates the narrative on a background worker; the dashboard polls with cancellation guards and backoff.',
-    reinforcementBadge: 'Sub-second response',
+      'Sync on demand and your dashboard refreshes with the latest transactions and a fresh AI summary.',
+    reinforcementBadge: 'One-click refresh',
   },
   {
     glyphPaths: ['M12 2l8 4v6c0 5-3.5 9-8 10-4.5-1-8-5-8-10V6l8-4z'],
-    eyebrowKicker: 'Auth surface',
-    headlineTitle: 'Token rotation done right',
+    eyebrowKicker: 'Security',
+    headlineTitle: 'Secure sign-in',
     bodyCopy:
-      'HS256 short-lived access tokens, opaque SHA-256 refresh hashes at rest, single-flight refresh on 401, and a Bearer middleware that never leaks user IDs into logs.',
-    reinforcementBadge: 'HS256 · SHA-256',
+      'Your account is password-protected. Bank credentials never touch FinSight; Plaid handles the secure link.',
+    reinforcementBadge: 'Private by design',
   },
   {
     glyphPaths: ['M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14z', 'M21 21l-5-5', 'M11 8v3', 'M11 14h.01'],
-    eyebrowKicker: 'Outlier surfaces',
-    headlineTitle: 'Anomaly hunting',
+    eyebrowKicker: 'Alerts',
+    headlineTitle: 'Unusual charge alerts',
     bodyCopy:
-      "Outlier spend gets flagged inline with the model's reasoning attached, so the user sees not just the charge, but the why behind the flag.",
+      'Large or out-of-pattern transactions get flagged with plain-language context so you know what to review.',
   },
   {
     glyphPaths: ['M3 17l5-5 4 4 8-8', 'M14 8h6v6'],
-    eyebrowKicker: 'Trend awareness',
-    headlineTitle: 'Category drift telemetry',
+    eyebrowKicker: 'Breakdown',
+    headlineTitle: 'Spending breakdown',
     bodyCopy:
-      'Week-over-week creep surfaced automatically, distilled into actionable recommendations the user can adopt without spelunking through CSVs.',
+      'See categories, merchants, and trends at a glance so you can spot where money is actually going.',
   },
 ]
 
@@ -79,21 +79,21 @@ const howItWorksStepLadder: readonly HowItWorksStepSpec[] = [
     stepNumeral: '01',
     stepHeadline: 'Link your institution',
     stepCopy:
-      'Plaid handles the OAuth dance. We persist only an opaque access token, credentials never touch our edge.',
+      'Plaid handles the security and complexity of linking your bank and pulling your transactions. Your login credentials never touch FinSight.',
     glyphPaths: ['M3 21h18', 'M5 21V11l7-4 7 4v10', 'M9 21V13h6v8'],
   },
   {
     stepNumeral: '02',
-    stepHeadline: 'We reconcile',
+    stepHeadline: 'We sync your activity',
     stepCopy:
-      'A streaming sync pulls every transaction into PostgreSQL via idempotent upserts, duplicates are impossible by design.',
+      'Your transactions sync automatically and stay up to date, so your dashboard always reflects your latest spending.',
     glyphPaths: ['M21 12a9 9 0 0 1-15 6.7L3 16', 'M3 12a9 9 0 0 1 15-6.7L21 8', 'M21 3v5h-5', 'M3 21v-5h5'],
   },
   {
     stepNumeral: '03',
     stepHeadline: 'Claude narrates',
     stepCopy:
-      'Top categories, anomalies, and recommendations distilled into a single paragraph, generated asynchronously so the dashboard never blocks.',
+      'Anthropic Claude reads your spending patterns and delivers a plain-language summary with top categories, unusual charges, and practical recommendations.',
     glyphPaths: ['M12 2l2.39 6.95L21 11l-6.61 2.05L12 20l-2.39-6.95L3 11l6.61-2.05L12 2z'],
   },
 ]
@@ -167,13 +167,13 @@ export const LandingNarrativeStack = () => (
       <div className="relative max-w-7xl mx-auto px-6 py-20 lg:py-28">
         <div className="text-center max-w-2xl mx-auto mb-14">
           <p className="text-xs font-semibold tracking-[0.35em] text-brand-700 dark:text-brand-300 uppercase mb-4">
-            Engineered surfaces
+            What you get
           </p>
           <h2 className="text-[2.25rem] sm:text-[2.75rem] font-semibold tracking-tighter text-gray-950 dark:text-white leading-[1.05]">
             Built like a product, <span className="bg-clip-text text-transparent bg-gradient-to-r from-brand-600 to-purple-600 dark:from-brand-400 dark:to-purple-400">not a project</span>.
           </h2>
           <p className="text-base text-gray-500 dark:text-gray-400 mt-5">
-            Every layer earns its seat, from the Plaid handoff to the way Claude's narrative streams onto your screen.
+            From linking your bank to reading AI-powered insights, every piece is designed to make your money clearer.
           </p>
         </div>
 
@@ -307,14 +307,14 @@ export const LandingNarrativeStack = () => (
           .
         </h2>
         <p className="text-lg text-gray-500 dark:text-gray-400 max-w-xl mx-auto mb-10">
-          Stand up a sandbox workspace in under a minute. Watch Plaid sync, watch Claude narrate, walk away with answers.
+          Sign up in under a minute, link a bank, and see your spending explained.
         </p>
         <div className="flex flex-col sm:flex-row flex-wrap justify-center gap-3 sm:gap-4">
           <Link
             to="/register"
             className="inline-flex items-center justify-center gap-2 px-8 sm:px-10 py-4 rounded-2xl text-white text-sm font-semibold bg-gradient-to-r from-brand-600 via-brand-700 to-purple-700 shadow-xl shadow-brand-700/30 ring-1 ring-white/15 hover:brightness-110 transition"
           >
-            Create live workspace
+            Get started
           </Link>
           <a
             href={SOURCE_REPOSITORY_URL}
@@ -387,7 +387,7 @@ export const LandingNarrativeStack = () => (
             </a>
           )}
           <span aria-hidden className="w-px h-3 bg-gray-300 dark:bg-white/15" />
-          <span>© {new Date().getFullYear()} · No live capital data, sandbox by design.</span>
+          <span>© {new Date().getFullYear()} FinSight</span>
         </div>
       </div>
     </footer>
