@@ -164,6 +164,11 @@ func syncTransactionsHandler(w http.ResponseWriter, r *http.Request) {
 
 	items, err := repository.GetItemsByUserID(r.Context(), userIdentifier)
 	if err != nil {
+		if strings.Contains(err.Error(), "decrypting") {
+			writeError(w, http.StatusInternalServerError,
+				"linked bank tokens could not be decrypted; ENCRYPTION_KEY may have changed. Re-link the bank or re-run: go run ./cmd/seeddemo --force-relink")
+			return
+		}
 		writeError(w, http.StatusInternalServerError, err.Error())
 		return
 	}

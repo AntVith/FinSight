@@ -18,6 +18,7 @@ import (
 	"log"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/joho/godotenv"
 	plaidSDK "github.com/plaid/plaid-go/v20/plaid"
@@ -38,6 +39,7 @@ const (
 func main() {
 	skipPlaidLink := flag.Bool("skip-plaid", false, "Skip Plaid sandbox public_token creation + exchange (just seed the user account)")
 	skipSync := flag.Bool("skip-sync", false, "Skip initial transaction sync + insight generation after linking")
+	forceRelink := flag.Bool("force-relink", false, "Delete existing Plaid items for the demo user and create a fresh First Platypus Bank link (use after ENCRYPTION_KEY rotation or stale sandbox tokens)")
 	flag.Parse()
 
 	if err := godotenv.Load(); err != nil {
@@ -82,7 +84,23 @@ func main() {
 
 	priorItemCollection, err := repository.GetItemsByUserID(ctx, demoUserIdentifier)
 	if err != nil {
-		log.Fatalf("seeddemo: query existing items: %v", err)
+		// Stale ciphertext from an ENCRYPTION_KEY rotation cannot be decrypted; treat as
+		// "items exist but are unusable" and require --force-relink to recover.
+		if *forceRelink {
+			fmt.Printf("seeddemo: existing items unreadable (%v); --force-relink will replace them\n", err)
+			priorItemCollection = nil
+		} else {
+			log.Fatalf("seeddemo: query existing items: %v\nHint: if ENCRYPTION_KEY changed, re-run with --force-relink", err)
+		}
+	}
+
+	if *forceRelink {
+		deletedCount, deleteErr := repository.DeleteItemsByUserID(ctx, demoUserIdentifier)
+		if deleteErr != nil {
+			log.Fatalf("seeddemo: force-relink delete items: %v", deleteErr)
+		}
+		fmt.Printf("seeddemo: --force-relink removed %d existing item(s)\n", deletedCount)
+		priorItemCollection = nil
 	}
 
 	if len(priorItemCollection) == 0 {
@@ -91,7 +109,7 @@ func main() {
 		}
 		fmt.Printf("seeddemo: linked %s sandbox item for demo user\n", firstPlatypusBankDisplayName)
 	} else {
-		fmt.Printf("seeddemo: demo user already has %d linked item(s); skipping Plaid link\n", len(priorItemCollection))
+		fmt.Printf("seeddemo: demo user already has %d linked item(s); skipping Plaid link (pass --force-relink to replace)\n", len(priorItemCollection))
 	}
 
 	if *skipSync {
@@ -196,17 +214,42 @@ func executeInitialSyncAndInsight(ctx context.Context, demoUserIdentifier int) e
 		return fmt.Errorf("no linked items found after provisioning")
 	}
 
-	for _, linkedItem := range refreshedItems {
-		if err := transactions.SyncTransactions(ctx, linkedItem); err != nil {
-			return fmt.Errorf("sync transactions: %w", err)
+	// Sandbox items often return an empty /transactions/sync page for a few
+	// seconds after public_token create. Retry briefly before giving up.
+	var allDemoTransactions []repository.Transaction
+	const maxSyncAttempts = 5
+	for attempt := 1; attempt <= maxSyncAttempts; attempt++ {
+		for _, linkedItem := range refreshedItems {
+			if err := transactions.SyncTransactions(ctx, linkedItem); err != nil {
+				return fmt.Errorf("sync transactions: %w", err)
+			}
+		}
+
+		// Reload items so subsequent attempts use the updated cursor.
+		refreshedItems, err = repository.GetItemsByUserID(ctx, demoUserIdentifier)
+		if err != nil {
+			return fmt.Errorf("re-query items after sync: %w", err)
+		}
+
+		allDemoTransactions, err = repository.GetTransactionsByUserID(ctx, demoUserIdentifier)
+		if err != nil {
+			return fmt.Errorf("read synced transactions: %w", err)
+		}
+
+		if len(allDemoTransactions) > 0 {
+			break
+		}
+		if attempt < maxSyncAttempts {
+			fmt.Printf("seeddemo: sync attempt %d returned 0 transactions; waiting for sandbox readiness…\n", attempt)
+			time.Sleep(2 * time.Second)
 		}
 	}
 
-	allDemoTransactions, err := repository.GetTransactionsByUserID(ctx, demoUserIdentifier)
-	if err != nil {
-		return fmt.Errorf("read synced transactions: %w", err)
-	}
 	fmt.Printf("seeddemo: synced %d transactions for demo user\n", len(allDemoTransactions))
+
+	if len(allDemoTransactions) == 0 {
+		return fmt.Errorf("plaid sandbox returned no transactions after %d attempts; re-run seeddemo or POST /api/transactions/sync after a short wait", maxSyncAttempts)
+	}
 
 	if strings.TrimSpace(os.Getenv("CLAUDE_API_KEY")) == "" {
 		fmt.Println("seeddemo: CLAUDE_API_KEY not set, skipping AI insight generation")

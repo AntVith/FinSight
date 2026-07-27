@@ -84,3 +84,22 @@ func UpdateCursor(ctx context.Context, itemID int, cursor string) error {
 
 	return nil
 }
+
+// DeleteItemsByUserID removes every linked Plaid item for a user.
+// Transactions cascade via the items FK; use this for demo re-seed / force-relink.
+func DeleteItemsByUserID(ctx context.Context, userID int) (int64, error) {
+	result, err := db.DB.ExecContext(ctx, `
+		DELETE FROM finsight.items
+		WHERE user_id = $1
+	`, userID)
+	if err != nil {
+		return 0, fmt.Errorf("error deleting items for user: %w", err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return 0, fmt.Errorf("error reading delete rows affected: %w", err)
+	}
+
+	return rowsAffected, nil
+}

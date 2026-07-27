@@ -28,10 +28,11 @@ func SyncTransactions(ctx context.Context, item repository.Item) error {
 		if err != nil {
 			var openAPIErr *plaidSDK.GenericOpenAPIError
 			if errors.As(err, &openAPIErr) {
-				log.Printf("plaid /transactions/sync error: item_id=%d body=%s", item.ID, string(openAPIErr.Body()))
-			} else {
-				log.Printf("plaid /transactions/sync error (no body): item_id=%d err=%v", item.ID, err)
+				body := string(openAPIErr.Body())
+				log.Printf("plaid /transactions/sync error: item_id=%d body=%s", item.ID, body)
+				return fmt.Errorf("error syncing transactions: plaid rejected request: %s", body)
 			}
+			log.Printf("plaid /transactions/sync error (no body): item_id=%d err=%v", item.ID, err)
 			return fmt.Errorf("error syncing transactions: %w", err)
 		}
 
