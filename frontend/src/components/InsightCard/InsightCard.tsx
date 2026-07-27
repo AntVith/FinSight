@@ -1,7 +1,7 @@
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import type { Insight } from '../../types'
-import { formatCategoryName, formatCurrency } from '../../utils/formatters'
+import { formatCategoryName, formatCurrency, formatDisplayedCalendarDateMedium } from '../../utils/formatters'
 
 interface Props {
   insight: Insight
@@ -10,9 +10,17 @@ interface Props {
 export const InsightCard = ({ insight }: Props) => {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 h-full">
-      <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-50 mb-3">
-        AI Financial Insights
-      </h2>
+      <div className="flex items-start justify-between gap-3 mb-3">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-50">
+          AI Financial Insights
+        </h2>
+        <time
+          dateTime={insight.UpdatedAt}
+          className="text-xs text-gray-400 dark:text-gray-500 shrink-0 pt-1"
+        >
+          Updated {formatDisplayedCalendarDateMedium(insight.UpdatedAt)}
+        </time>
+      </div>
 
       <div className="prose prose-sm dark:prose-invert max-w-none mb-4 text-gray-700 dark:text-gray-300">
         <ReactMarkdown remarkPlugins={[remarkGfm]}>{insight.Summary}</ReactMarkdown>

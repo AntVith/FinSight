@@ -56,7 +56,7 @@ export const MoneyFlowSparkRibbon = ({ transactions }: MoneyFlowSparkRibbonPrope
   return (
     <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
       <div className="flex items-start justify-between mb-1 gap-3">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-50">Capital flow</h2>
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-50">Money flow</h2>
         <span className="text-[10px] uppercase tracking-[0.25em] text-gray-400 dark:text-gray-500">
           Period totals
         </span>
