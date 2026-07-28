@@ -65,6 +65,7 @@ func NewRouter(authService *finsightAuth.Service) http.Handler {
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 	r.Use(corsMiddleware)
+	r.Use(maxJSONBodyBytesMiddleware(64 << 10)) // 64 KiB
 
 	r.Route("/api", func(r chi.Router) {
 		r.Get("/health", healthHandler)
@@ -133,6 +134,21 @@ func corsMiddleware(next http.Handler) http.Handler {
 
 		next.ServeHTTP(w, r)
 	})
+}
+
+// maxJSONBodyBytesMiddleware rejects oversized JSON bodies used by auth and link handlers.
+func maxJSONBodyBytesMiddleware(maxBytes int64) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
+			if request.Body != nil &&
+				(request.Method == http.MethodPost ||
+					request.Method == http.MethodPut ||
+					request.Method == http.MethodPatch) {
+				request.Body = http.MaxBytesReader(responseWriter, request.Body, maxBytes)
+			}
+			next.ServeHTTP(responseWriter, request)
+		})
+	}
 }
 
 func writeJSON(w http.ResponseWriter, status int, data any) {
