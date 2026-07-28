@@ -102,7 +102,7 @@ npm run dev           # http://localhost:5173
 
 1. New Railway project → "Deploy from GitHub repo" → point at `backend/`
 2. Provision a PostgreSQL plugin; Railway will inject `DATABASE_URL`
-3. Set env vars: `PLAID_CLIENT_ID`, `PLAID_SECRET`, `PLAID_ENV=sandbox`, `CLAUDE_API_KEY`, `CLAUDE_MODEL`, `JWT_SECRET` (32+ random bytes), `ENCRYPTION_KEY` (exactly 32 chars), `ALLOWED_ORIGINS=https://your-frontend.vercel.app`
+3. Set env vars: `PLAID_CLIENT_ID`, `PLAID_SECRET`, `PLAID_ENV=sandbox`, `CLAUDE_API_KEY`, `CLAUDE_MODEL`, `JWT_SECRET` (32+ random bytes), `ENCRYPTION_KEY` (exactly 32 chars), `ALLOWED_ORIGINS=https://your-frontend.vercel.app`. Optional: `REGISTRATION_ENABLED=false` to close public signup.
 4. Optionally set `DEMO_USER_EMAIL` + `DEMO_USER_PASSWORD`, then seed against the **public** Postgres URL (not `railway run`, which injects the internal hostname): `DATABASE_URL='…' go run ./cmd/seeddemo`. Use `--force-relink` if tokens were encrypted under a previous key.
 5. Migrations apply automatically on first boot
 

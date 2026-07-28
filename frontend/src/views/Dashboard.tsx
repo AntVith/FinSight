@@ -166,8 +166,19 @@ export const Dashboard = () => {
       await syncTransactions()
       recordSync()
       await reloadTransactionalShell()
-    } catch {
-      setFatalLedgerErrorMessage('Update failed, try reconnecting via Connect bank.')
+    } catch (syncFailure) {
+      const statusCode =
+        typeof syncFailure === 'object' &&
+        syncFailure !== null &&
+        'response' in syncFailure &&
+        typeof (syncFailure as { response?: { status?: number } }).response?.status === 'number'
+          ? (syncFailure as { response: { status: number } }).response.status
+          : null
+      setFatalLedgerErrorMessage(
+        statusCode === 429
+          ? 'Sync cooldown is active. You can refresh about once per hour.'
+          : 'Update failed, try reconnecting via Connect bank.'
+      )
       setTransactionSyncBusy(false)
       return
     }

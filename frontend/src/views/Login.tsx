@@ -2,6 +2,7 @@ import { type FormEvent, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 
 import { useAuthenticatedSession } from '../context/AuthContext'
+import { sanitizePostAuthReturnPath } from '../utils/sanitizeReturnPath'
 
 export const Login = () => {
   const navigate = useNavigate()
@@ -22,9 +23,7 @@ export const Login = () => {
   >(null)
 
   const encodedReturnTargetFragment = returnTargetSearchParameters.get('returnTo')
-  const resolvedPostAuthDestination = encodedReturnTargetFragment
-    ? decodeURIComponent(encodedReturnTargetFragment)
-    : '/dashboard'
+  const resolvedPostAuthDestination = sanitizePostAuthReturnPath(encodedReturnTargetFragment)
 
   const handleAuthenticateExistingMember = async (event: FormEvent) => {
     event.preventDefault()

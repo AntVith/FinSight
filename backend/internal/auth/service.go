@@ -20,6 +20,7 @@ const minimumPasswordCharacters = 10
 
 var ErrInvalidCredentials = errors.New("invalid credentials")
 var ErrInvalidRefreshToken = errors.New("invalid refresh token")
+var ErrPasswordTooShort = fmt.Errorf("password must be at least %d characters", minimumPasswordCharacters)
 
 type Service struct {
 	jwtSecret  []byte
@@ -81,7 +82,7 @@ func (service *Service) AccessTTLSeconds() int64 {
 
 func validateNewPassword(candidate string) error {
 	if len(candidate) < minimumPasswordCharacters {
-		return fmt.Errorf("password must be at least %d characters", minimumPasswordCharacters)
+		return ErrPasswordTooShort
 	}
 	return nil
 }

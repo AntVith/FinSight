@@ -2,11 +2,20 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"fmt"
+
+	"github.com/lib/pq"
 
 	"github.com/AntVith/FinSight/backend/db"
 	"github.com/AntVith/FinSight/backend/internal/crypto"
 )
+
+// MaxLinkedItemsPerUser caps how many Plaid items one account may attach.
+const MaxLinkedItemsPerUser = 3
+
+var ErrDuplicatePlaidItem = errors.New("institution already linked")
+var ErrLinkedItemLimitReached = errors.New("linked account limit reached")
 
 type Item struct {
 	ID               int
@@ -26,14 +35,45 @@ func SaveItem(ctx context.Context, userID int, accessToken string, itemID string
 	_, err = db.DB.ExecContext(ctx, `
 		INSERT INTO finsight.items (user_id, plaid_item_id, plaid_access_token, institution_name)
 		VALUES ($1, $2, $3, $4)
-		ON CONFLICT (plaid_access_token) DO NOTHING
 	`, userID, itemID, encryptedToken, institutionName)
 
 	if err != nil {
+		var pqErr *pq.Error
+		if errors.As(err, &pqErr) && pqErr.Code == "23505" {
+			return ErrDuplicatePlaidItem
+		}
 		return fmt.Errorf("error saving item: %w", err)
 	}
 
 	return nil
+}
+
+// CountItemsByUserID returns linked item count without decrypting access tokens.
+func CountItemsByUserID(ctx context.Context, userID int) (int, error) {
+	var count int
+	err := db.DB.QueryRowContext(ctx, `
+		SELECT COUNT(*)::int
+		FROM finsight.items
+		WHERE user_id = $1
+	`, userID).Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("error counting items for user: %w", err)
+	}
+	return count, nil
+}
+
+// PlaidItemExists reports whether a Plaid item id is already stored.
+func PlaidItemExists(ctx context.Context, plaidItemID string) (bool, error) {
+	var exists bool
+	err := db.DB.QueryRowContext(ctx, `
+		SELECT EXISTS(
+			SELECT 1 FROM finsight.items WHERE plaid_item_id = $1
+		)
+	`, plaidItemID).Scan(&exists)
+	if err != nil {
+		return false, fmt.Errorf("error checking plaid item: %w", err)
+	}
+	return exists, nil
 }
 
 func GetItemsByUserID(ctx context.Context, userID int) ([]Item, error) {
