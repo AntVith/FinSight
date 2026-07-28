@@ -77,8 +77,19 @@ const enqueueSingleFlightRefresh = (): Promise<boolean> => {
 }
 
 api.interceptors.request.use((config) => {
+  const requestPath = typeof config.url === 'string' ? config.url : ''
+  const pathSegment = requestPath.includes('http')
+    ? new URL(requestPath).pathname
+    : requestPath
+
+  const isPublicAuthRoute =
+    pathSegment.includes('/api/auth/login') ||
+    pathSegment.includes('/api/auth/register') ||
+    pathSegment.includes('/api/auth/refresh') ||
+    pathSegment.includes('/api/auth/logout')
+
   const accessPlain = getStoredAccessToken()
-  if (accessPlain && config.headers) {
+  if (accessPlain && config.headers && !isPublicAuthRoute) {
     config.headers.Authorization = `Bearer ${accessPlain}`
   }
   return config
@@ -95,10 +106,12 @@ api.interceptors.response.use(
 
     const respondedStatus = error.response?.status
 
-    console.error(
-      'API error:',
-      (error.response?.data as { error?: string } | undefined)?.error || error.message
-    )
+    if (import.meta.env.DEV) {
+      console.error(
+        'API error:',
+        (error.response?.data as { error?: string } | undefined)?.error || error.message
+      )
+    }
 
     if (respondedStatus !== 401) {
       return Promise.reject(error)

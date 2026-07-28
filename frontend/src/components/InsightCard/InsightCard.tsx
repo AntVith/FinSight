@@ -23,7 +23,28 @@ export const InsightCard = ({ insight }: Props) => {
       </div>
 
       <div className="prose prose-sm dark:prose-invert max-w-none mb-4 text-gray-700 dark:text-gray-300">
-        <ReactMarkdown remarkPlugins={[remarkGfm]}>{insight.Summary}</ReactMarkdown>
+        <ReactMarkdown
+          remarkPlugins={[remarkGfm]}
+          urlTransform={(url) => {
+            const trimmedUrl = url.trim()
+            if (trimmedUrl.startsWith('https://')) {
+              return trimmedUrl
+            }
+            if (trimmedUrl.startsWith('/') && !trimmedUrl.startsWith('//')) {
+              return trimmedUrl
+            }
+            return ''
+          }}
+          components={{
+            a: ({ href, children }) => (
+              <a href={href} target="_blank" rel="noopener noreferrer">
+                {children}
+              </a>
+            ),
+          }}
+        >
+          {insight.Summary}
+        </ReactMarkdown>
       </div>
 
       {insight.TopCategories.length > 0 && (
