@@ -71,6 +71,14 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+        '403':
+          description: Registration disabled via REGISTRATION_ENABLED=false
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: registration is disabled
         '429':
           $ref: '#/components/responses/TooManyRequests'
 
@@ -242,6 +250,14 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '409':
+          description: Duplicate Plaid item or linked-account limit reached
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: institution already linked
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':

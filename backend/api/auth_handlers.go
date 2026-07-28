@@ -3,12 +3,24 @@ package api
 import (
 	"encoding/json"
 	"errors"
+	"log"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/AntVith/FinSight/backend/db/repository"
 	finsightAuth "github.com/AntVith/FinSight/backend/internal/auth"
 )
+
+// registrationEnabledFromEnv defaults to true when unset so local/dev keep working.
+// Set REGISTRATION_ENABLED=false on production to close public signup.
+func registrationEnabledFromEnv() bool {
+	rawValue := strings.TrimSpace(strings.ToLower(os.Getenv("REGISTRATION_ENABLED")))
+	if rawValue == "" {
+		return true
+	}
+	return rawValue == "1" || rawValue == "true" || rawValue == "yes"
+}
 
 type tokenResponseEnvelope struct {
 	AccessToken  string               `json:"access_token"`
@@ -47,6 +59,11 @@ func authRegisterPOST(authService *finsightAuth.Service) http.HandlerFunc {
 	}
 
 	return func(responseWriter http.ResponseWriter, request *http.Request) {
+		if !registrationEnabledFromEnv() {
+			writeError(responseWriter, http.StatusForbidden, "registration is disabled")
+			return
+		}
+
 		var decoded registerRequestEnvelope
 		if err := json.NewDecoder(request.Body).Decode(&decoded); err != nil {
 			writeError(responseWriter, http.StatusBadRequest, "invalid request body")
@@ -70,8 +87,13 @@ func authRegisterPOST(authService *finsightAuth.Service) http.HandlerFunc {
 			writeError(responseWriter, http.StatusConflict, "email already registered")
 			return
 		}
-		if err != nil {
+		if errors.Is(err, finsightAuth.ErrPasswordTooShort) {
 			writeError(responseWriter, http.StatusBadRequest, err.Error())
+			return
+		}
+		if err != nil {
+			log.Printf("auth register: %v", err)
+			writeError(responseWriter, http.StatusInternalServerError, "registration failed")
 			return
 		}
 
@@ -117,7 +139,8 @@ func authLoginPOST(authService *finsightAuth.Service) http.HandlerFunc {
 			return
 		}
 		if err != nil {
-			writeError(responseWriter, http.StatusInternalServerError, err.Error())
+			log.Printf("auth login: %v", err)
+			writeError(responseWriter, http.StatusInternalServerError, "login failed")
 			return
 		}
 
@@ -158,7 +181,8 @@ func authRefreshPOST(authService *finsightAuth.Service) http.HandlerFunc {
 			return
 		}
 		if err != nil {
-			writeError(responseWriter, http.StatusInternalServerError, err.Error())
+			log.Printf("auth refresh: %v", err)
+			writeError(responseWriter, http.StatusInternalServerError, "token refresh failed")
 			return
 		}
 
@@ -185,7 +209,8 @@ func authLogoutPOST(authService *finsightAuth.Service) http.HandlerFunc {
 			return
 		}
 		if logoutErr != nil {
-			writeError(responseWriter, http.StatusInternalServerError, logoutErr.Error())
+			log.Printf("auth logout: %v", logoutErr)
+			writeError(responseWriter, http.StatusInternalServerError, "logout failed")
 			return
 		}
 
