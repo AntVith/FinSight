@@ -80,3 +80,32 @@ func GetUserByEmail(ctx context.Context, email string) (*User, error) {
 
 	return &user, nil
 }
+
+// GetUserByID loads a user row by primary key. Returns nil when missing.
+func GetUserByID(ctx context.Context, userID int) (*User, error) {
+	var user User
+	err := db.DB.QueryRowContext(ctx, `
+		SELECT id, email, COALESCE(password_hash, ''), COALESCE(first_name, ''), COALESCE(last_name, ''),
+		       email_verified, created_at, updated_at
+		FROM finsight.users
+		WHERE id = $1
+	`, userID).Scan(
+		&user.ID,
+		&user.Email,
+		&user.PasswordHash,
+		&user.FirstName,
+		&user.LastName,
+		&user.EmailVerified,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+	)
+
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("error querying user by id: %w", err)
+	}
+
+	return &user, nil
+}

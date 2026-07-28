@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -17,6 +18,7 @@ import (
 	finsightAuth "github.com/AntVith/FinSight/backend/internal/auth"
 	"github.com/AntVith/FinSight/backend/internal/insights"
 	"github.com/AntVith/FinSight/backend/internal/plaid"
+	"github.com/AntVith/FinSight/backend/internal/ratelimit"
 	"github.com/AntVith/FinSight/backend/internal/transactions"
 )
 
@@ -24,6 +26,17 @@ import (
 // ALLOWED_ORIGINS environment variable (comma-separated). When unset, we fall
 // back to a localhost-only allowlist suitable for development.
 var configuredCorsOriginAllowlist = buildCorsOriginAllowlistFromEnv()
+
+// Process-local abuse controls. Adequate for a single Railway replica.
+var (
+	authLoginLimiter      = ratelimit.NewLimiter(10, time.Minute)
+	authRegisterLimiter   = ratelimit.NewLimiter(5, time.Minute)
+	authRefreshLimiter    = ratelimit.NewLimiter(30, time.Minute)
+	linkTokenLimiter      = ratelimit.NewLimiter(10, time.Hour)
+	linkExchangeLimiter   = ratelimit.NewLimiter(5, time.Hour)
+	transactionSyncGate   = ratelimit.NewCooldownGate(time.Hour)
+	configuredDemoMailbox = strings.ToLower(strings.TrimSpace(os.Getenv("DEMO_USER_EMAIL")))
+)
 
 func buildCorsOriginAllowlistFromEnv() map[string]bool {
 	rawAllowlist := strings.TrimSpace(os.Getenv("ALLOWED_ORIGINS"))
@@ -54,15 +67,31 @@ func NewRouter(authService *finsightAuth.Service) http.Handler {
 
 	r.Route("/api", func(r chi.Router) {
 		r.Get("/health", healthHandler)
-		r.Post("/auth/register", authRegisterPOST(authService))
-		r.Post("/auth/login", authLoginPOST(authService))
-		r.Post("/auth/refresh", authRefreshPOST(authService))
+
+		r.With(ratelimit.Middleware(authRegisterLimiter, ipRateLimitKey)).Post(
+			"/auth/register",
+			authRegisterPOST(authService),
+		)
+		r.With(ratelimit.Middleware(authLoginLimiter, ipRateLimitKey)).Post(
+			"/auth/login",
+			authLoginPOST(authService),
+		)
+		r.With(ratelimit.Middleware(authRefreshLimiter, ipRateLimitKey)).Post(
+			"/auth/refresh",
+			authRefreshPOST(authService),
+		)
 		r.Post("/auth/logout", authLogoutPOST(authService))
 
 		r.Group(func(r chi.Router) {
 			r.Use(authService.BearerMiddleware)
-			r.Get("/link/token", createLinkTokenHandler)
-			r.Post("/link/exchange", exchangeTokenHandler)
+			r.With(ratelimit.Middleware(linkTokenLimiter, authenticatedUserRateLimitKey)).Get(
+				"/link/token",
+				createLinkTokenHandler,
+			)
+			r.With(ratelimit.Middleware(linkExchangeLimiter, authenticatedUserRateLimitKey)).Post(
+				"/link/exchange",
+				exchangeTokenHandler,
+			)
 			r.Post("/transactions/sync", syncTransactionsHandler)
 			r.Get("/insights", getInsightsHandler)
 			r.Get("/transactions", getTransactionsHandler)
@@ -70,6 +99,18 @@ func NewRouter(authService *finsightAuth.Service) http.Handler {
 	})
 
 	return r
+}
+
+func ipRateLimitKey(request *http.Request) string {
+	return "ip:" + ratelimit.ClientIP(request)
+}
+
+func authenticatedUserRateLimitKey(request *http.Request) string {
+	userIdentifier, authenticated := finsightAuth.AuthenticatedUserID(request.Context())
+	if !authenticated {
+		return "user:anonymous"
+	}
+	return "user:" + strconv.Itoa(userIdentifier)
 }
 
 func corsMiddleware(next http.Handler) http.Handler {
@@ -103,10 +144,44 @@ func writeError(w http.ResponseWriter, status int, message string) {
 	writeJSON(w, status, map[string]string{"error": message})
 }
 
+func writeTooManyRequests(w http.ResponseWriter, message string, retryAfter time.Duration) {
+	seconds := int(retryAfter.Seconds())
+	if seconds < 1 {
+		seconds = 1
+	}
+	w.Header().Set("Retry-After", strconv.Itoa(seconds))
+	writeError(w, http.StatusTooManyRequests, message)
+}
+
+// isConfiguredDemoUser reports whether the authenticated user is the shared demo mailbox.
+func isConfiguredDemoUser(ctx context.Context, userIdentifier int) (bool, error) {
+	if configuredDemoMailbox == "" {
+		return false, nil
+	}
+	userRecord, err := repository.GetUserByID(ctx, userIdentifier)
+	if err != nil {
+		return false, err
+	}
+	if userRecord == nil {
+		return false, nil
+	}
+	return strings.EqualFold(userRecord.Email, configuredDemoMailbox), nil
+}
+
 func createLinkTokenHandler(w http.ResponseWriter, r *http.Request) {
 	userIdentifier, authenticated := finsightAuth.AuthenticatedUserID(r.Context())
 	if !authenticated {
 		writeError(w, http.StatusUnauthorized, "unauthenticated")
+		return
+	}
+
+	isDemoUser, demoLookupErr := isConfiguredDemoUser(r.Context(), userIdentifier)
+	if demoLookupErr != nil {
+		writeError(w, http.StatusInternalServerError, "could not verify account policy")
+		return
+	}
+	if isDemoUser {
+		writeError(w, http.StatusForbidden, "demo account cannot link additional banks")
 		return
 	}
 
@@ -123,6 +198,16 @@ func exchangeTokenHandler(w http.ResponseWriter, r *http.Request) {
 	userIdentifier, authenticated := finsightAuth.AuthenticatedUserID(r.Context())
 	if !authenticated {
 		writeError(w, http.StatusUnauthorized, "unauthenticated")
+		return
+	}
+
+	isDemoUser, demoLookupErr := isConfiguredDemoUser(r.Context(), userIdentifier)
+	if demoLookupErr != nil {
+		writeError(w, http.StatusInternalServerError, "could not verify account policy")
+		return
+	}
+	if isDemoUser {
+		writeError(w, http.StatusForbidden, "demo account cannot link additional banks")
 		return
 	}
 
@@ -162,6 +247,16 @@ func syncTransactionsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	syncKey := "sync:" + strconv.Itoa(userIdentifier)
+	if blocked, retryAfter := transactionSyncGate.Remaining(syncKey); blocked {
+		writeTooManyRequests(
+			w,
+			"sync cooldown active; try again later",
+			retryAfter,
+		)
+		return
+	}
+
 	items, err := repository.GetItemsByUserID(r.Context(), userIdentifier)
 	if err != nil {
 		if strings.Contains(err.Error(), "decrypting") {
@@ -177,6 +272,9 @@ func syncTransactionsHandler(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "no linked accounts found")
 		return
 	}
+
+	// Start cooldown only once we know a Plaid call will be made.
+	transactionSyncGate.Mark(syncKey)
 
 	for _, item := range items {
 		if err := transactions.SyncTransactions(r.Context(), item); err != nil {

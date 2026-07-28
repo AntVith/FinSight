@@ -71,6 +71,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
 
   /api/auth/login:
     post:
@@ -89,14 +91,16 @@ paths:
                 password:
                   type: string
       responses:
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
         '200':
           description: Login successful
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/AuthTokenEnvelope'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
 
   /api/auth/refresh:
     post:
@@ -121,6 +125,8 @@ paths:
                 $ref: '#/components/schemas/RefreshOnlyEnvelope'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
 
   /api/auth/logout:
     post:
@@ -174,6 +180,8 @@ paths:
       responses:
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
         '200':
           description: Link token created successfully
           content:
@@ -185,6 +193,8 @@ paths:
                   link_token:
                     type: string
                     example: link-sandbox-abc123
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '500':
           $ref: '#/components/responses/InternalError'
 
@@ -230,6 +240,10 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
         '500':
           $ref: '#/components/responses/InternalError'
 
@@ -268,6 +282,8 @@ paths:
                 error: no linked accounts found
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
         '500':
           $ref: '#/components/responses/InternalError'
 
@@ -516,3 +532,22 @@ components:
             $ref: '#/components/schemas/Error'
           example:
             error: invalid or expired access token
+
+    Forbidden:
+      description: Authenticated but not permitted (e.g. demo account link policy)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: demo account cannot link additional banks
+
+    TooManyRequests:
+      description: Rate limit or sync cooldown exceeded
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: rate limit exceeded, try again shortly
+
