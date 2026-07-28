@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -144,6 +145,12 @@ func writeError(w http.ResponseWriter, status int, message string) {
 	writeJSON(w, status, map[string]string{"error": message})
 }
 
+// writeLoggedInternalError logs the real failure and returns a stable client message.
+func writeLoggedInternalError(w http.ResponseWriter, operation string, err error, clientMessage string) {
+	log.Printf("%s: %v", operation, err)
+	writeError(w, http.StatusInternalServerError, clientMessage)
+}
+
 func writeTooManyRequests(w http.ResponseWriter, message string, retryAfter time.Duration) {
 	seconds := int(retryAfter.Seconds())
 	if seconds < 1 {
@@ -177,7 +184,7 @@ func createLinkTokenHandler(w http.ResponseWriter, r *http.Request) {
 
 	isDemoUser, demoLookupErr := isConfiguredDemoUser(r.Context(), userIdentifier)
 	if demoLookupErr != nil {
-		writeError(w, http.StatusInternalServerError, "could not verify account policy")
+		writeLoggedInternalError(w, "demo policy lookup", demoLookupErr, "could not verify account policy")
 		return
 	}
 	if isDemoUser {
@@ -187,7 +194,7 @@ func createLinkTokenHandler(w http.ResponseWriter, r *http.Request) {
 
 	token, err := plaid.CreateLinkToken(r.Context(), fmt.Sprintf("%d", userIdentifier))
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
+		writeLoggedInternalError(w, "create link token", err, "could not create link token")
 		return
 	}
 
@@ -203,11 +210,21 @@ func exchangeTokenHandler(w http.ResponseWriter, r *http.Request) {
 
 	isDemoUser, demoLookupErr := isConfiguredDemoUser(r.Context(), userIdentifier)
 	if demoLookupErr != nil {
-		writeError(w, http.StatusInternalServerError, "could not verify account policy")
+		writeLoggedInternalError(w, "demo policy lookup", demoLookupErr, "could not verify account policy")
 		return
 	}
 	if isDemoUser {
 		writeError(w, http.StatusForbidden, "demo account cannot link additional banks")
+		return
+	}
+
+	linkedCount, countErr := repository.CountItemsByUserID(r.Context(), userIdentifier)
+	if countErr != nil {
+		writeLoggedInternalError(w, "count linked items", countErr, "could not link bank")
+		return
+	}
+	if linkedCount >= repository.MaxLinkedItemsPerUser {
+		writeError(w, http.StatusConflict, repository.ErrLinkedItemLimitReached.Error())
 		return
 	}
 
@@ -228,12 +245,26 @@ func exchangeTokenHandler(w http.ResponseWriter, r *http.Request) {
 
 	accessToken, itemID, err := plaid.ExchangePublicToken(r.Context(), body.PublicToken)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
+		writeLoggedInternalError(w, "exchange public token", err, "could not link bank")
+		return
+	}
+
+	alreadyLinked, existsErr := repository.PlaidItemExists(r.Context(), itemID)
+	if existsErr != nil {
+		writeLoggedInternalError(w, "check plaid item", existsErr, "could not link bank")
+		return
+	}
+	if alreadyLinked {
+		writeError(w, http.StatusConflict, "institution already linked")
 		return
 	}
 
 	if err := repository.SaveItem(r.Context(), userIdentifier, accessToken, itemID, body.InstitutionName); err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
+		if errors.Is(err, repository.ErrDuplicatePlaidItem) {
+			writeError(w, http.StatusConflict, "institution already linked")
+			return
+		}
+		writeLoggedInternalError(w, "save linked item", err, "could not link bank")
 		return
 	}
 
@@ -260,11 +291,11 @@ func syncTransactionsHandler(w http.ResponseWriter, r *http.Request) {
 	items, err := repository.GetItemsByUserID(r.Context(), userIdentifier)
 	if err != nil {
 		if strings.Contains(err.Error(), "decrypting") {
-			writeError(w, http.StatusInternalServerError,
-				"linked bank tokens could not be decrypted; ENCRYPTION_KEY may have changed. Re-link the bank or re-run: go run ./cmd/seeddemo --force-relink")
+			writeLoggedInternalError(w, "load linked items", err,
+				"linked bank tokens could not be decrypted; re-link the bank or re-run seeddemo --force-relink")
 			return
 		}
-		writeError(w, http.StatusInternalServerError, err.Error())
+		writeLoggedInternalError(w, "load linked items", err, "could not sync transactions")
 		return
 	}
 
@@ -278,14 +309,14 @@ func syncTransactionsHandler(w http.ResponseWriter, r *http.Request) {
 
 	for _, item := range items {
 		if err := transactions.SyncTransactions(r.Context(), item); err != nil {
-			writeError(w, http.StatusInternalServerError, err.Error())
+			writeLoggedInternalError(w, "sync transactions", err, "could not sync transactions")
 			return
 		}
 	}
 
 	allTransactions, err := repository.GetTransactionsByUserID(r.Context(), userIdentifier)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
+		writeLoggedInternalError(w, "load transactions after sync", err, "could not sync transactions")
 		return
 	}
 
@@ -312,7 +343,7 @@ func getInsightsHandler(w http.ResponseWriter, r *http.Request) {
 
 	insight, err := repository.GetInsightByUserID(r.Context(), userIdentifier)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
+		writeLoggedInternalError(w, "load insights", err, "could not load insights")
 		return
 	}
 
@@ -333,7 +364,7 @@ func getTransactionsHandler(w http.ResponseWriter, r *http.Request) {
 
 	txns, err := repository.GetTransactionsByUserID(r.Context(), userIdentifier)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
+		writeLoggedInternalError(w, "load transactions", err, "could not load transactions")
 		return
 	}
 
