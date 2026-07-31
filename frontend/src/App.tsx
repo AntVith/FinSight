@@ -51,8 +51,9 @@ export const AppRoutesTree = () => {
   }, [enterDemoSandboxSession, navigate])
 
   const handleTerminateApplicationSession = useCallback(async () => {
-    await signOutAndClearStoredSession()
+    // Navigate first so RequireAuth unmounts before authenticatedUser becomes null.
     navigate('/', { replace: true })
+    await signOutAndClearStoredSession()
   }, [navigate, signOutAndClearStoredSession])
 
   return (
