@@ -1,7 +1,6 @@
-import { Link } from 'react-router-dom'
-
 import { LandingNarrativeStack } from '../components/LandingNarrativeStack/LandingNarrativeStack'
 import { LandingProductPreviewRibbon } from '../components/LandingPreview/LandingPreview'
+import { SignUpSignInButtons } from '../components/SignUpSignInButtons/SignUpSignInButtons'
 import {
   illustrativeSyntheticInsightSnapshot,
   illustrativeSyntheticTransactionLedgerRowset,
@@ -34,22 +33,12 @@ export const Landing = () => {
                 Demo login is not configured for this build. Sign up or sign in to explore FinSight.
               </div>
             )}
-            <div className="flex flex-col sm:flex-row flex-wrap justify-center gap-3 sm:gap-4 mb-8">
-              <Link
-                to="/register"
-                className="inline-flex items-center justify-center gap-2 px-6 sm:px-10 py-3.5 sm:py-4 rounded-2xl text-white text-sm font-semibold bg-gradient-to-r from-brand-600 via-brand-700 to-purple-700 shadow-xl shadow-brand-700/30 ring-1 ring-white/15 hover:brightness-110 transition"
-              >
-                Get started
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                  <path d="M5 12h14M13 6l6 6-6 6" />
-                </svg>
-              </Link>
-              <Link
-                to="/login"
-                className="inline-flex items-center justify-center gap-2 px-6 sm:px-10 py-3.5 sm:py-4 rounded-2xl text-sm font-semibold text-brand-700 dark:text-brand-300 bg-white/90 dark:bg-white/[0.04] backdrop-blur border border-brand-500/40 dark:border-brand-400/40 shadow-sm shadow-brand-600/10 hover:border-brand-500/70 dark:hover:border-brand-400/70 hover:bg-brand-50 dark:hover:bg-brand-500/10 hover:text-brand-800 dark:hover:text-brand-200 transition"
-              >
-                Sign in
-              </Link>
+            <div className="mb-8">
+              <SignUpSignInButtons
+                primaryLabel="Get started"
+                primaryTo="/register"
+                secondaryTo="/login"
+              />
             </div>
           </div>
 

@@ -9,12 +9,25 @@ interface UsePlaidLinkReturn {
   open: () => void
 }
 
-export const usePlaidLinkHook = (onSuccess: () => void | Promise<void>): UsePlaidLinkReturn => {
+interface UsePlaidLinkOptions {
+  /** When true, skip link-token fetch (e.g. demo accounts cannot start Plaid Link). */
+  disabled?: boolean
+}
+
+export const usePlaidLinkHook = (
+  onSuccess: () => void | Promise<void>,
+  options: UsePlaidLinkOptions = {}
+): UsePlaidLinkReturn => {
+  const { disabled = false } = options
   const [linkToken, setLinkToken] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    if (disabled) {
+      return
+    }
+
     const getLinkToken = async () => {
       try {
         setIsLoading(true)
@@ -27,8 +40,8 @@ export const usePlaidLinkHook = (onSuccess: () => void | Promise<void>): UsePlai
       }
     }
 
-    getLinkToken()
-  }, [])
+    void getLinkToken()
+  }, [disabled])
 
   const handleSuccess = useCallback(
     async (publicToken: string, metadata: PlaidLinkOnSuccessMetadata) => {
@@ -57,6 +70,9 @@ export const usePlaidLinkHook = (onSuccess: () => void | Promise<void>): UsePlai
     isLoading,
     error,
     open: () => {
+      if (disabled) {
+        return
+      }
       open()
     },
   }

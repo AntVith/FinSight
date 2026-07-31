@@ -28,6 +28,8 @@ interface AuthSessionContextValueShape {
   enterDemoSandboxSession: () => Promise<void>
   signOutAndClearStoredSession: () => Promise<void>
   demoCredentialsConfiguredOnBuild: boolean
+  /** True when the signed-in mailbox is the shared sandbox demo account. */
+  isDemoSession: boolean
 }
 
 const AuthSessionRuntimeContextBundle = createContext<AuthSessionContextValueShape | undefined>(
@@ -85,6 +87,10 @@ export const AuthProvider = ({ children }: AuthShellProperties) => {
   const demoMailbox = import.meta.env.VITE_DEMO_EMAIL?.trim() ?? ''
   const demoPasswordPlain = import.meta.env.VITE_DEMO_PASSWORD ?? ''
   const demoCredentialsConfiguredOnBuild = demoMailbox !== '' && demoPasswordPlain !== ''
+  const isDemoSession =
+    demoMailbox !== '' &&
+    authenticatedUser !== null &&
+    authenticatedUser.email.toLowerCase() === demoMailbox.toLowerCase()
 
   const enterDemoSandboxSession = useCallback(async () => {
     if (!demoCredentialsConfiguredOnBuild) {
@@ -105,12 +111,14 @@ export const AuthProvider = ({ children }: AuthShellProperties) => {
       enterDemoSandboxSession,
       signOutAndClearStoredSession,
       demoCredentialsConfiguredOnBuild,
+      isDemoSession,
     }),
     [
       authenticatedUser,
       bootstrapFinishedHydration,
       demoCredentialsConfiguredOnBuild,
       enterDemoSandboxSession,
+      isDemoSession,
       signInWithPassword,
       signOutAndClearStoredSession,
       signUpWithCredentials,
