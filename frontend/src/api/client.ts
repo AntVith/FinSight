@@ -171,17 +171,17 @@ export const loginWithCredentials = async (
 
 export const logoutRevokingRefreshServerSide = async (): Promise<void> => {
   const refreshTokenPlain = getStoredRefreshToken()
+  // Clear locally first so a slow revoke cannot wipe tokens from a later login/register.
+  clearAuthStorage()
   if (!refreshTokenPlain) {
-    clearAuthStorage()
     return
   }
   const logoutRequestBody: AuthLogoutRequestPayload = { refresh_token: refreshTokenPlain }
   try {
     await refreshIsolationClient.post('/api/auth/logout', logoutRequestBody)
   } catch {
-    // Best-effort revoke; still purge local credentials
+    // Best-effort revoke; local credentials already purged
   }
-  clearAuthStorage()
 }
 
 export const fetchLinkToken = async (): Promise<LinkTokenResponse> => {
