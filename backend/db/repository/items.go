@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/lib/pq"
 
@@ -24,28 +25,32 @@ type Item struct {
 	PlaidAccessToken string
 	Cursor           string
 	InstitutionName  string
+	CreatedAt        time.Time
 }
 
-func SaveItem(ctx context.Context, userID int, accessToken string, itemID string, institutionName string) error {
+// SaveItem persists the linked Plaid item and returns the new row ID.
+func SaveItem(ctx context.Context, userID int, accessToken string, itemID string, institutionName string) (int, error) {
 	encryptedToken, err := crypto.Encrypt(accessToken)
 	if err != nil {
-		return fmt.Errorf("error encrypting access token: %w", err)
+		return 0, fmt.Errorf("error encrypting access token: %w", err)
 	}
 
-	_, err = db.DB.ExecContext(ctx, `
+	var newID int
+	err = db.DB.QueryRowContext(ctx, `
 		INSERT INTO finsight.items (user_id, plaid_item_id, plaid_access_token, institution_name)
 		VALUES ($1, $2, $3, $4)
-	`, userID, itemID, encryptedToken, institutionName)
+		RETURNING id
+	`, userID, itemID, encryptedToken, institutionName).Scan(&newID)
 
 	if err != nil {
 		var pqErr *pq.Error
 		if errors.As(err, &pqErr) && pqErr.Code == "23505" {
-			return ErrDuplicatePlaidItem
+			return 0, ErrDuplicatePlaidItem
 		}
-		return fmt.Errorf("error saving item: %w", err)
+		return 0, fmt.Errorf("error saving item: %w", err)
 	}
 
-	return nil
+	return newID, nil
 }
 
 // CountItemsByUserID returns linked item count without decrypting access tokens.
@@ -78,7 +83,7 @@ func PlaidItemExists(ctx context.Context, plaidItemID string) (bool, error) {
 
 func GetItemsByUserID(ctx context.Context, userID int) ([]Item, error) {
 	rows, err := db.DB.QueryContext(ctx, `
-		SELECT id, user_id, plaid_item_id, plaid_access_token, COALESCE(cursor, ''), COALESCE(institution_name, '')
+		SELECT id, user_id, plaid_item_id, plaid_access_token, COALESCE(cursor, ''), COALESCE(institution_name, ''), created_at
 		FROM finsight.items
 		WHERE user_id = $1
 	`, userID)
@@ -97,6 +102,7 @@ func GetItemsByUserID(ctx context.Context, userID int) ([]Item, error) {
 			&item.PlaidAccessToken,
 			&item.Cursor,
 			&item.InstitutionName,
+			&item.CreatedAt,
 		); err != nil {
 			return nil, fmt.Errorf("error scanning item: %w", err)
 		}
