@@ -25,6 +25,7 @@ import (
 
 	"github.com/AntVith/FinSight/backend/db"
 	"github.com/AntVith/FinSight/backend/db/repository"
+	"github.com/AntVith/FinSight/backend/internal/accounts"
 	finsightAuth "github.com/AntVith/FinSight/backend/internal/auth"
 	"github.com/AntVith/FinSight/backend/internal/insights"
 	finsightPlaid "github.com/AntVith/FinSight/backend/internal/plaid"
@@ -192,14 +193,25 @@ func provisionFirstPlatypusSandboxLinkage(ctx context.Context, demoUserIdentifie
 		return fmt.Errorf("exchange public_token: %w", err)
 	}
 
-	if err := repository.SaveItem(
+	newItemID, err := repository.SaveItem(
 		ctx,
 		demoUserIdentifier,
 		accessTokenPlain,
 		plaidItemID,
 		firstPlatypusBankDisplayName,
-	); err != nil {
+	)
+	if err != nil {
 		return fmt.Errorf("save item: %w", err)
+	}
+
+	newItem := repository.Item{
+		ID:               newItemID,
+		UserID:           demoUserIdentifier,
+		PlaidAccessToken: accessTokenPlain,
+		InstitutionName:  firstPlatypusBankDisplayName,
+	}
+	if _, err := accounts.SyncAccounts(ctx, newItem); err != nil {
+		return fmt.Errorf("sync accounts: %w", err)
 	}
 
 	return nil
@@ -220,7 +232,11 @@ func executeInitialSyncAndInsight(ctx context.Context, demoUserIdentifier int) e
 	const maxSyncAttempts = 5
 	for attempt := 1; attempt <= maxSyncAttempts; attempt++ {
 		for _, linkedItem := range refreshedItems {
-			if err := transactions.SyncTransactions(ctx, linkedItem); err != nil {
+			accountIDMap, err := accounts.SyncAccounts(ctx, linkedItem)
+			if err != nil {
+				return fmt.Errorf("sync accounts: %w", err)
+			}
+			if err := transactions.SyncTransactions(ctx, linkedItem, accountIDMap); err != nil {
 				return fmt.Errorf("sync transactions: %w", err)
 			}
 		}

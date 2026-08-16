@@ -12,7 +12,11 @@ import (
 	plaidSDK "github.com/plaid/plaid-go/v20/plaid"
 )
 
-func SyncTransactions(ctx context.Context, item repository.Item) error {
+// SyncTransactions pulls the latest transaction delta from Plaid for the given
+// Item and upserts/deletes rows in finsight.transactions. accountIDMap maps
+// each plaid_account_id to its finsight.accounts.id so each transaction row
+// can be linked to its account.
+func SyncTransactions(ctx context.Context, item repository.Item, accountIDMap map[string]int) error {
 	var added, modified []plaidSDK.Transaction
 	var removed []plaidSDK.RemovedTransaction
 	cursor := item.Cursor
@@ -54,6 +58,11 @@ func SyncTransactions(ctx context.Context, item repository.Item) error {
 
 			category := t.GetPersonalFinanceCategory()
 
+			var accountID *int
+			if id, ok := accountIDMap[t.GetAccountId()]; ok {
+				accountID = &id
+			}
+
 			toUpsert = append(toUpsert, repository.Transaction{
 				ItemID:             item.ID,
 				UserID:             item.UserID,
@@ -65,6 +74,7 @@ func SyncTransactions(ctx context.Context, item repository.Item) error {
 				CategoryPrimary:    category.GetPrimary(),
 				CategoryDetailed:   category.GetDetailed(),
 				Pending:            t.GetPending(),
+				AccountID:          accountID,
 			})
 		}
 

@@ -16,6 +16,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 
 	"github.com/AntVith/FinSight/backend/db/repository"
+	"github.com/AntVith/FinSight/backend/internal/accounts"
 	finsightAuth "github.com/AntVith/FinSight/backend/internal/auth"
 	"github.com/AntVith/FinSight/backend/internal/insights"
 	"github.com/AntVith/FinSight/backend/internal/plaid"
@@ -99,6 +100,8 @@ func NewRouter(authService *finsightAuth.Service) http.Handler {
 			r.Post("/transactions/sync", syncTransactionsHandler)
 			r.Get("/insights", getInsightsHandler)
 			r.Get("/transactions", getTransactionsHandler)
+			r.Get("/items", getItemsHandler)
+			r.Get("/accounts", getAccountsHandler)
 		})
 	})
 
@@ -277,12 +280,26 @@ func exchangeTokenHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := repository.SaveItem(r.Context(), userIdentifier, accessToken, itemID, body.InstitutionName); err != nil {
+	newItemID, err := repository.SaveItem(r.Context(), userIdentifier, accessToken, itemID, body.InstitutionName)
+	if err != nil {
 		if errors.Is(err, repository.ErrDuplicatePlaidItem) {
 			writeError(w, http.StatusConflict, "institution already linked")
 			return
 		}
 		writeLoggedInternalError(w, "save linked item", err, "could not link bank")
+		return
+	}
+
+	// AccountsGet is a single fast call — run synchronously so accounts are
+	// available immediately after linking without waiting for a full sync.
+	newItem := repository.Item{
+		ID:               newItemID,
+		UserID:           userIdentifier,
+		PlaidAccessToken: accessToken,
+		InstitutionName:  body.InstitutionName,
+	}
+	if _, err := accounts.SyncAccounts(r.Context(), newItem); err != nil {
+		writeLoggedInternalError(w, "sync accounts on link", err, "linked bank but could not sync accounts")
 		return
 	}
 
@@ -326,7 +343,12 @@ func syncTransactionsHandler(w http.ResponseWriter, r *http.Request) {
 	transactionSyncGate.Mark(syncKey)
 
 	for _, item := range items {
-		if err := transactions.SyncTransactions(r.Context(), item); err != nil {
+		accountIDMap, err := accounts.SyncAccounts(r.Context(), item)
+		if err != nil {
+			writeLoggedInternalError(w, "sync accounts", err, "could not sync accounts")
+			return
+		}
+		if err := transactions.SyncTransactions(r.Context(), item, accountIDMap); err != nil {
 			writeLoggedInternalError(w, "sync transactions", err, "could not sync transactions")
 			return
 		}
@@ -387,6 +409,85 @@ func getTransactionsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, txns)
+}
+
+func getItemsHandler(w http.ResponseWriter, r *http.Request) {
+	userIdentifier, authenticated := finsightAuth.AuthenticatedUserID(r.Context())
+	if !authenticated {
+		writeError(w, http.StatusUnauthorized, "unauthenticated")
+		return
+	}
+
+	items, err := repository.GetItemsByUserID(r.Context(), userIdentifier)
+	if err != nil {
+		writeLoggedInternalError(w, "load items", err, "could not load linked institutions")
+		return
+	}
+
+	type itemResponse struct {
+		ID              int    `json:"id"`
+		InstitutionName string `json:"institution_name"`
+		LinkedAt        string `json:"linked_at"`
+	}
+
+	// GetItemsByUserID decrypts access tokens; we never expose them in the response.
+	response := make([]itemResponse, 0, len(items))
+	for _, item := range items {
+		response = append(response, itemResponse{
+			ID:              item.ID,
+			InstitutionName: item.InstitutionName,
+			LinkedAt:        item.CreatedAt.UTC().Format(time.RFC3339),
+		})
+	}
+
+	writeJSON(w, http.StatusOK, response)
+}
+
+func getAccountsHandler(w http.ResponseWriter, r *http.Request) {
+	userIdentifier, authenticated := finsightAuth.AuthenticatedUserID(r.Context())
+	if !authenticated {
+		writeError(w, http.StatusUnauthorized, "unauthenticated")
+		return
+	}
+
+	accts, err := repository.GetAccountsByUserID(r.Context(), userIdentifier)
+	if err != nil {
+		writeLoggedInternalError(w, "load accounts", err, "could not load accounts")
+		return
+	}
+
+	type accountResponse struct {
+		ID               int      `json:"id"`
+		ItemID           int      `json:"item_id"`
+		InstitutionName  string   `json:"institution_name"`
+		Name             string   `json:"name"`
+		OfficialName     string   `json:"official_name,omitempty"`
+		Type             string   `json:"type"`
+		Subtype          string   `json:"subtype,omitempty"`
+		Mask             string   `json:"mask,omitempty"`
+		BalanceCurrent   *float64 `json:"balance_current"`
+		BalanceAvailable *float64 `json:"balance_available"`
+		ISOCurrencyCode  string   `json:"iso_currency_code,omitempty"`
+	}
+
+	response := make([]accountResponse, 0, len(accts))
+	for _, a := range accts {
+		response = append(response, accountResponse{
+			ID:               a.ID,
+			ItemID:           a.ItemID,
+			InstitutionName:  a.InstitutionName,
+			Name:             a.Name,
+			OfficialName:     a.OfficialName,
+			Type:             a.Type,
+			Subtype:          a.Subtype,
+			Mask:             a.Mask,
+			BalanceCurrent:   a.BalanceCurrent,
+			BalanceAvailable: a.BalanceAvailable,
+			ISOCurrencyCode:  a.ISOCurrencyCode,
+		})
+	}
+
+	writeJSON(w, http.StatusOK, response)
 }
 
 func healthHandler(w http.ResponseWriter, r *http.Request) {

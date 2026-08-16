@@ -26,6 +26,8 @@ tags:
     description: Service health
   - name: link
     description: Plaid Link token flow
+  - name: accounts
+    description: Linked institutions and account data
   - name: transactions
     description: Transaction sync and retrieval
   - name: insights
@@ -326,6 +328,54 @@ paths:
         '500':
           $ref: '#/components/responses/InternalError'
 
+  /api/items:
+    get:
+      security:
+        - BearerAuth: []
+      tags: [accounts]
+      summary: List linked institutions
+      description: |
+        Returns the institutions the authenticated user has linked via Plaid Link.
+        Sensitive fields (access token, sync cursor) are never included in this response.
+        User identity is resolved from the Bearer token; no user ID in the path.
+      responses:
+        '200':
+          description: List of linked institutions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LinkedItem'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/accounts:
+    get:
+      security:
+        - BearerAuth: []
+      tags: [accounts]
+      summary: List accounts
+      description: |
+        Returns all Plaid accounts for the authenticated user, joined with
+        institution name. Balances are refreshed on every transaction sync and
+        immediately after linking. User identity is resolved from the Bearer token.
+      responses:
+        '200':
+          description: List of accounts with current balances
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Account'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
   /api/insights:
     get:
       security:
@@ -445,6 +495,71 @@ components:
           type: boolean
           description: Whether the transaction has settled
           example: false
+        AccountID:
+          type: integer
+          nullable: true
+          description: FK to finsight.accounts. Null for transactions synced before accounts were introduced.
+          example: 3
+
+    LinkedItem:
+      type: object
+      required: [id, institution_name, linked_at]
+      properties:
+        id:
+          type: integer
+          example: 1
+        institution_name:
+          type: string
+          example: Chase
+        linked_at:
+          type: string
+          format: date-time
+          example: "2026-01-15T10:00:00Z"
+
+    Account:
+      type: object
+      required: [id, item_id, institution_name, name, type]
+      properties:
+        id:
+          type: integer
+          example: 3
+        item_id:
+          type: integer
+          example: 1
+        institution_name:
+          type: string
+          example: Chase
+        name:
+          type: string
+          example: Plaid Saving
+        official_name:
+          type: string
+          example: Plaid Gold Standard 0% Interest Saving
+        type:
+          type: string
+          description: "Plaid account type: depository, credit, investment, loan, other"
+          example: depository
+        subtype:
+          type: string
+          description: "Plaid account subtype: checking, savings, credit card, etc."
+          example: savings
+        mask:
+          type: string
+          description: Last 4 digits of the account number
+          example: "1111"
+        balance_current:
+          type: number
+          format: float
+          nullable: true
+          example: 110.00
+        balance_available:
+          type: number
+          format: float
+          nullable: true
+          example: 100.00
+        iso_currency_code:
+          type: string
+          example: USD
 
     CategorySummary:
       type: object

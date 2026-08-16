@@ -20,6 +20,7 @@ type Transaction struct {
 	CategoryPrimary    string
 	CategoryDetailed   string
 	Pending            bool
+	AccountID          *int
 }
 
 func UpsertTransactions(ctx context.Context, transactions []Transaction) error {
@@ -34,19 +35,22 @@ func UpsertTransactions(ctx context.Context, transactions []Transaction) error {
 		_, err := tx.ExecContext(ctx, `
 			INSERT INTO finsight.transactions (
 				item_id, user_id, plaid_transaction_id, amount, date,
-				name, merchant_name, category_primary, category_detailed, pending
-			) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+				name, merchant_name, category_primary, category_detailed, pending,
+				account_id
+			) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
 			ON CONFLICT (plaid_transaction_id) DO UPDATE SET
-				amount       = EXCLUDED.amount,
-				date         = EXCLUDED.date,
-				name         = EXCLUDED.name,
-				pending      = EXCLUDED.pending,
-				merchant_name    = EXCLUDED.merchant_name,
+				amount            = EXCLUDED.amount,
+				date              = EXCLUDED.date,
+				name              = EXCLUDED.name,
+				pending           = EXCLUDED.pending,
+				merchant_name     = EXCLUDED.merchant_name,
 				category_primary  = EXCLUDED.category_primary,
 				category_detailed = EXCLUDED.category_detailed,
-				updated_at   = NOW()
+				account_id        = EXCLUDED.account_id,
+				updated_at        = NOW()
 		`, t.ItemID, t.UserID, t.PlaidTransactionID, t.Amount, t.Date,
-			t.Name, t.MerchantName, t.CategoryPrimary, t.CategoryDetailed, t.Pending)
+			t.Name, t.MerchantName, t.CategoryPrimary, t.CategoryDetailed, t.Pending,
+			t.AccountID)
 
 		if err != nil {
 			return fmt.Errorf("error upserting transaction %s: %w", t.PlaidTransactionID, err)
@@ -92,7 +96,7 @@ func GetTransactionsByUserID(ctx context.Context, userID int) ([]Transaction, er
 	rows, err := db.DB.QueryContext(ctx, `
 		SELECT id, item_id, user_id, plaid_transaction_id, amount, date,
 			name, COALESCE(merchant_name, ''), COALESCE(category_primary, ''),
-			COALESCE(category_detailed, ''), pending
+			COALESCE(category_detailed, ''), pending, account_id
 		FROM finsight.transactions
 		WHERE user_id = $1
 		ORDER BY date DESC
@@ -108,7 +112,7 @@ func GetTransactionsByUserID(ctx context.Context, userID int) ([]Transaction, er
 		if err := rows.Scan(
 			&t.ID, &t.ItemID, &t.UserID, &t.PlaidTransactionID,
 			&t.Amount, &t.Date, &t.Name, &t.MerchantName,
-			&t.CategoryPrimary, &t.CategoryDetailed, &t.Pending,
+			&t.CategoryPrimary, &t.CategoryDetailed, &t.Pending, &t.AccountID,
 		); err != nil {
 			return nil, fmt.Errorf("error scanning transaction: %w", err)
 		}
