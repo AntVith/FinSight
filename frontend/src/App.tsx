@@ -1,6 +1,7 @@
 import { useCallback, useContext, useState } from 'react'
 import { Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 
+import { DashboardSubNav } from './components/DashboardSubNav/DashboardSubNav'
 import { Navbar } from './components/Navbar/Navbar'
 import { RequireAuthenticatedRouteBoundary } from './components/RequireAuth/RequireAuth'
 import { RouteErrorBoundary } from './components/RouteErrorBoundary/RouteErrorBoundary'
@@ -8,6 +9,9 @@ import { ThemeContext, ThemeProvider } from './context/ThemeContext'
 import { AuthProvider, useAuthenticatedSession } from './context/AuthContext'
 import { Connect } from './views/Connect'
 import { Dashboard } from './views/Dashboard'
+import { DashboardAccounts } from './views/DashboardAccounts'
+import { DashboardOverview } from './views/DashboardOverview'
+import { DashboardTransactions } from './views/DashboardTransactions'
 import { Landing } from './views/Landing'
 import { Login } from './views/Login'
 import { Register } from './views/Register'
@@ -58,20 +62,23 @@ export const AppRoutesTree = () => {
 
   return (
     <>
-      <Navbar
-        presentationVariant={presentationVariant}
-        isDarkAppearance={isDark}
-        onToggleAppearance={toggleDark}
-        authenticatedUserMailbox={authenticatedUser?.email}
-        onTerminateSessionClicked={
-          presentationVariant === 'application' ? handleTerminateApplicationSession : undefined
-        }
-        sandboxDemoShortcutEnabled={demoCredentialsConfiguredOnBuild}
-        sandboxDemoBusy={marketingSandboxShortcutBusy}
-        onSandboxDemoShortcutTriggered={
-          presentationVariant === 'marketing' ? handleMarketingSandboxShortcut : undefined
-        }
-      />
+      <div className="sticky top-0 z-50">
+        <Navbar
+          presentationVariant={presentationVariant}
+          isDarkAppearance={isDark}
+          onToggleAppearance={toggleDark}
+          authenticatedUserMailbox={authenticatedUser?.email}
+          onTerminateSessionClicked={
+            presentationVariant === 'application' ? handleTerminateApplicationSession : undefined
+          }
+          sandboxDemoShortcutEnabled={demoCredentialsConfiguredOnBuild}
+          sandboxDemoBusy={marketingSandboxShortcutBusy}
+          onSandboxDemoShortcutTriggered={
+            presentationVariant === 'marketing' ? handleMarketingSandboxShortcut : undefined
+          }
+        />
+        {locationPathname.startsWith('/dashboard') && <DashboardSubNav />}
+      </div>
       <RouteErrorBoundary>
         <Routes>
           <Route path="/" element={<Landing />} />
@@ -92,11 +99,16 @@ export const AppRoutesTree = () => {
                 <Dashboard />
               </RequireAuthenticatedRouteBoundary>
             }
-          />
+          >
+            <Route index element={<DashboardOverview />} />
+            <Route path="transactions" element={<DashboardTransactions />} />
+            <Route path="accounts" element={<DashboardAccounts />} />
+          </Route>
         </Routes>
       </RouteErrorBoundary>
     </>
   )
+
 }
 
 export const App = () => {
