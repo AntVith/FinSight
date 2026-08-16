@@ -70,6 +70,26 @@ func ExchangePublicToken(ctx context.Context, publicToken string) (string, strin
 	return resp.GetAccessToken(), resp.GetItemId(), nil
 }
 
+// FetchAccounts retrieves all accounts for the given Plaid Item. The access
+// token must already be decrypted before calling. Storage is the caller's
+// responsibility.
+func FetchAccounts(ctx context.Context, accessToken string) ([]plaid.AccountBase, error) {
+	request := plaid.NewAccountsGetRequest(accessToken)
+
+	resp, _, err := plaidClient.PlaidApi.AccountsGet(ctx).AccountsGetRequest(*request).Execute()
+	if err != nil {
+		var openAPIErr *plaid.GenericOpenAPIError
+		if errors.As(err, &openAPIErr) {
+			log.Printf("plaid /accounts/get error: body=%s", string(openAPIErr.Body()))
+		} else {
+			log.Printf("plaid /accounts/get error (no body): %v", err)
+		}
+		return nil, fmt.Errorf("error fetching accounts: %w", err)
+	}
+
+	return resp.GetAccounts(), nil
+}
+
 func GetClient() *plaid.APIClient {
 	return plaidClient
 }
