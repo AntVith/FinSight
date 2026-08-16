@@ -10,6 +10,27 @@ export interface Transaction {
   CategoryPrimary: string
   CategoryDetailed: string
   Pending: boolean
+  AccountID: number | null
+}
+
+export interface LinkedItem {
+  id: number
+  institution_name: string
+  linked_at: string
+}
+
+export interface Account {
+  id: number
+  item_id: number
+  institution_name: string
+  name: string
+  official_name: string
+  type: string
+  subtype: string
+  mask: string
+  balance_current: number | null
+  balance_available: number | null
+  iso_currency_code: string
 }
 
 export interface CategorySummary {
