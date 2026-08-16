@@ -12,6 +12,7 @@ import {
 import { triggerAuthExpiredNavigator } from '../auth/authExpiredNavigator'
 
 import type {
+  Account,
   AuthLogoutRequestPayload,
   AuthCredentialsPayload,
   AuthRefreshEnvelopeResponse,
@@ -20,6 +21,7 @@ import type {
   AuthTokenEnvelopeResponse,
   AuthenticatedUserSnippet,
   InsightResponse,
+  LinkedItem,
   LinkTokenResponse,
   SyncResponse,
   Transaction,
@@ -212,6 +214,16 @@ export const fetchTransactions = async (): Promise<Transaction[]> => {
 export const fetchInsights = async (): Promise<InsightResponse> => {
   const response = await api.get<InsightResponse>('/api/insights')
   return response.data
+}
+
+export const fetchItems = async (): Promise<LinkedItem[]> => {
+  const response = await api.get<LinkedItem[] | null>('/api/items')
+  return Array.isArray(response.data) ? response.data : []
+}
+
+export const fetchAccounts = async (): Promise<Account[]> => {
+  const response = await api.get<Account[] | null>('/api/accounts')
+  return Array.isArray(response.data) ? response.data : []
 }
 
 /** Hydrates React auth state; tokens live in storage. */

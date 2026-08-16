@@ -105,7 +105,7 @@ export const Navbar = ({
   sandboxDemoBusy = false,
   onSandboxDemoShortcutTriggered,
 }: NavbarShellSurfaceProperties) => (
-  <nav className="sticky top-0 z-50">
+  <nav>
     <div className="relative backdrop-blur-2xl backdrop-saturate-150 bg-white/85 dark:bg-[#0b0e1a]/85 border-b border-gray-200/60 dark:border-white/[0.07] shadow-[0_1px_0_0_rgb(255_255_255_/_0.04)_inset]">
       <div className="max-w-7xl mx-auto flex items-center justify-between gap-3 sm:gap-4 px-4 sm:px-6 py-3.5">
         <BrandWordmarkWithGlyph />

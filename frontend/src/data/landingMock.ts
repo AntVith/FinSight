@@ -23,6 +23,7 @@ export const illustrativeSyntheticTransactionLedgerRowset: Transaction[] = [
     CategoryPrimary: 'INCOME',
     CategoryDetailed: 'INCOME_WAGES',
     Pending: false,
+    AccountID: null,
   },
   {
     ID: 90002,
@@ -36,6 +37,7 @@ export const illustrativeSyntheticTransactionLedgerRowset: Transaction[] = [
     CategoryPrimary: 'INCOME',
     CategoryDetailed: 'INCOME_WAGES',
     Pending: false,
+    AccountID: null,
   },
   {
     ID: 90003,
@@ -49,6 +51,7 @@ export const illustrativeSyntheticTransactionLedgerRowset: Transaction[] = [
     CategoryPrimary: 'INCOME',
     CategoryDetailed: 'INCOME_OTHER_INCOME',
     Pending: false,
+    AccountID: null,
   },
   {
     ID: 90004,
@@ -62,6 +65,7 @@ export const illustrativeSyntheticTransactionLedgerRowset: Transaction[] = [
     CategoryPrimary: 'INCOME',
     CategoryDetailed: 'INCOME_OTHER_INCOME',
     Pending: false,
+    AccountID: null,
   },
   {
     ID: 90005,
@@ -75,6 +79,7 @@ export const illustrativeSyntheticTransactionLedgerRowset: Transaction[] = [
     CategoryPrimary: 'INCOME',
     CategoryDetailed: 'INCOME_OTHER_INCOME',
     Pending: false,
+    AccountID: null,
   },
   {
     ID: 90006,
@@ -88,6 +93,7 @@ export const illustrativeSyntheticTransactionLedgerRowset: Transaction[] = [
     CategoryPrimary: 'INCOME',
     CategoryDetailed: 'INCOME_OTHER_INCOME',
     Pending: false,
+    AccountID: null,
   },
   {
     ID: 90007,
@@ -101,6 +107,7 @@ export const illustrativeSyntheticTransactionLedgerRowset: Transaction[] = [
     CategoryPrimary: 'INCOME',
     CategoryDetailed: 'INCOME_DIVIDENDS',
     Pending: false,
+    AccountID: null,
   },
   {
     ID: 90008,
@@ -114,6 +121,7 @@ export const illustrativeSyntheticTransactionLedgerRowset: Transaction[] = [
     CategoryPrimary: 'INCOME',
     CategoryDetailed: 'INCOME_INTEREST_EARNED',
     Pending: false,
+    AccountID: null,
   },
   {
     ID: 90009,
@@ -127,6 +135,7 @@ export const illustrativeSyntheticTransactionLedgerRowset: Transaction[] = [
     CategoryPrimary: 'INCOME',
     CategoryDetailed: 'INCOME_WAGES',
     Pending: false,
+    AccountID: null,
   },
   {
     ID: 90010,
@@ -140,6 +149,7 @@ export const illustrativeSyntheticTransactionLedgerRowset: Transaction[] = [
     CategoryPrimary: 'INCOME',
     CategoryDetailed: 'INCOME_WAGES',
     Pending: false,
+    AccountID: null,
   },
 
   // ── Food and drink (15 entries, ~$6,008) ──────────────────────────────────
@@ -155,6 +165,7 @@ export const illustrativeSyntheticTransactionLedgerRowset: Transaction[] = [
     CategoryPrimary: 'FOOD_AND_DRINK',
     CategoryDetailed: 'FOOD_AND_DRINK_RESTAURANT',
     Pending: false,
+    AccountID: null,
   },
   {
     ID: 91002,
@@ -168,6 +179,7 @@ export const illustrativeSyntheticTransactionLedgerRowset: Transaction[] = [
     CategoryPrimary: 'FOOD_AND_DRINK',
     CategoryDetailed: 'FOOD_AND_DRINK_RESTAURANT',
     Pending: false,
+    AccountID: null,
   },
   {
     ID: 91003,
@@ -181,6 +193,7 @@ export const illustrativeSyntheticTransactionLedgerRowset: Transaction[] = [
     CategoryPrimary: 'FOOD_AND_DRINK',
     CategoryDetailed: 'FOOD_AND_DRINK_RESTAURANT',
     Pending: false,
+    AccountID: null,
   },
   {
     ID: 91004,
@@ -194,6 +207,7 @@ export const illustrativeSyntheticTransactionLedgerRowset: Transaction[] = [
     CategoryPrimary: 'FOOD_AND_DRINK',
     CategoryDetailed: 'FOOD_AND_DRINK_RESTAURANT',
     Pending: false,
+    AccountID: null,
   },
   {
     ID: 91005,
@@ -207,6 +221,7 @@ export const illustrativeSyntheticTransactionLedgerRowset: Transaction[] = [
     CategoryPrimary: 'FOOD_AND_DRINK',
     CategoryDetailed: 'FOOD_AND_DRINK_RESTAURANT',
     Pending: false,
+    AccountID: null,
   },
   {
     ID: 91006,
@@ -220,6 +235,7 @@ export const illustrativeSyntheticTransactionLedgerRowset: Transaction[] = [
     CategoryPrimary: 'FOOD_AND_DRINK',
     CategoryDetailed: 'FOOD_AND_DRINK_RESTAURANT',
     Pending: false,
+    AccountID: null,
   },
   {
     ID: 91007,
@@ -233,6 +249,7 @@ export const illustrativeSyntheticTransactionLedgerRowset: Transaction[] = [
     CategoryPrimary: 'FOOD_AND_DRINK',
     CategoryDetailed: 'FOOD_AND_DRINK_BEER_WINE_AND_LIQUOR',
     Pending: false,
+    AccountID: null,
   },
   {
     ID: 91008,
@@ -246,6 +263,7 @@ export const illustrativeSyntheticTransactionLedgerRowset: Transaction[] = [
     CategoryPrimary: 'FOOD_AND_DRINK',
     CategoryDetailed: 'FOOD_AND_DRINK_GROCERIES',
     Pending: false,
+    AccountID: null,
   },
   {
     ID: 91009,
@@ -259,6 +277,7 @@ export const illustrativeSyntheticTransactionLedgerRowset: Transaction[] = [
     CategoryPrimary: 'FOOD_AND_DRINK',
     CategoryDetailed: 'FOOD_AND_DRINK_GROCERIES',
     Pending: false,
+    AccountID: null,
   },
   {
     ID: 91010,
@@ -272,6 +291,7 @@ export const illustrativeSyntheticTransactionLedgerRowset: Transaction[] = [
     CategoryPrimary: 'FOOD_AND_DRINK',
     CategoryDetailed: 'FOOD_AND_DRINK_GROCERIES',
     Pending: false,
+    AccountID: null,
   },
   {
     ID: 91011,
@@ -285,6 +305,7 @@ export const illustrativeSyntheticTransactionLedgerRowset: Transaction[] = [
     CategoryPrimary: 'FOOD_AND_DRINK',
     CategoryDetailed: 'FOOD_AND_DRINK_GROCERIES',
     Pending: false,
+    AccountID: null,
   },
   {
     ID: 91012,
@@ -298,6 +319,7 @@ export const illustrativeSyntheticTransactionLedgerRowset: Transaction[] = [
     CategoryPrimary: 'FOOD_AND_DRINK',
     CategoryDetailed: 'FOOD_AND_DRINK_GROCERIES',
     Pending: false,
+    AccountID: null,
   },
   {
     ID: 91013,
@@ -311,6 +333,7 @@ export const illustrativeSyntheticTransactionLedgerRowset: Transaction[] = [
     CategoryPrimary: 'FOOD_AND_DRINK',
     CategoryDetailed: 'FOOD_AND_DRINK_COFFEE',
     Pending: false,
+    AccountID: null,
   },
   {
     ID: 91014,
@@ -324,6 +347,7 @@ export const illustrativeSyntheticTransactionLedgerRowset: Transaction[] = [
     CategoryPrimary: 'FOOD_AND_DRINK',
     CategoryDetailed: 'FOOD_AND_DRINK_COFFEE',
     Pending: false,
+    AccountID: null,
   },
   {
     ID: 91015,
@@ -337,6 +361,7 @@ export const illustrativeSyntheticTransactionLedgerRowset: Transaction[] = [
     CategoryPrimary: 'FOOD_AND_DRINK',
     CategoryDetailed: 'FOOD_AND_DRINK_COFFEE',
     Pending: false,
+    AccountID: null,
   },
 
   // ── Transportation (7 entries, ~$8,799) ───────────────────────────────────
@@ -352,6 +377,7 @@ export const illustrativeSyntheticTransactionLedgerRowset: Transaction[] = [
     CategoryPrimary: 'TRANSPORTATION',
     CategoryDetailed: 'TRANSPORTATION_TAXIS_AND_RIDE_SHARES',
     Pending: false,
+    AccountID: null,
   },
   {
     ID: 92002,
@@ -365,6 +391,7 @@ export const illustrativeSyntheticTransactionLedgerRowset: Transaction[] = [
     CategoryPrimary: 'TRANSPORTATION',
     CategoryDetailed: 'TRANSPORTATION_TAXIS_AND_RIDE_SHARES',
     Pending: false,
+    AccountID: null,
   },
   {
     ID: 92003,
@@ -378,6 +405,7 @@ export const illustrativeSyntheticTransactionLedgerRowset: Transaction[] = [
     CategoryPrimary: 'TRANSPORTATION',
     CategoryDetailed: 'TRANSPORTATION_TAXIS_AND_RIDE_SHARES',
     Pending: false,
+    AccountID: null,
   },
   {
     ID: 92004,
@@ -391,6 +419,7 @@ export const illustrativeSyntheticTransactionLedgerRowset: Transaction[] = [
     CategoryPrimary: 'TRANSPORTATION',
     CategoryDetailed: 'TRANSPORTATION_TAXIS_AND_RIDE_SHARES',
     Pending: false,
+    AccountID: null,
   },
   {
     ID: 92005,
@@ -404,6 +433,7 @@ export const illustrativeSyntheticTransactionLedgerRowset: Transaction[] = [
     CategoryPrimary: 'TRANSPORTATION',
     CategoryDetailed: 'TRANSPORTATION_TAXIS_AND_RIDE_SHARES',
     Pending: false,
+    AccountID: null,
   },
   {
     ID: 92006,
@@ -417,6 +447,7 @@ export const illustrativeSyntheticTransactionLedgerRowset: Transaction[] = [
     CategoryPrimary: 'TRANSPORTATION',
     CategoryDetailed: 'TRANSPORTATION_PARKING',
     Pending: false,
+    AccountID: null,
   },
   {
     ID: 92007,
@@ -430,6 +461,7 @@ export const illustrativeSyntheticTransactionLedgerRowset: Transaction[] = [
     CategoryPrimary: 'TRANSPORTATION',
     CategoryDetailed: 'TRANSPORTATION_PUBLIC_TRANSIT',
     Pending: false,
+    AccountID: null,
   },
 
   // ── Travel / hotels (4 entries, $8,100) ───────────────────────────────────
@@ -445,6 +477,7 @@ export const illustrativeSyntheticTransactionLedgerRowset: Transaction[] = [
     CategoryPrimary: 'TRAVEL',
     CategoryDetailed: 'TRAVEL_LODGING',
     Pending: false,
+    AccountID: null,
   },
   {
     ID: 93002,
@@ -458,6 +491,7 @@ export const illustrativeSyntheticTransactionLedgerRowset: Transaction[] = [
     CategoryPrimary: 'TRAVEL',
     CategoryDetailed: 'TRAVEL_LODGING',
     Pending: false,
+    AccountID: null,
   },
   {
     ID: 93003,
@@ -471,6 +505,7 @@ export const illustrativeSyntheticTransactionLedgerRowset: Transaction[] = [
     CategoryPrimary: 'TRAVEL',
     CategoryDetailed: 'TRAVEL_LODGING',
     Pending: false,
+    AccountID: null,
   },
   {
     ID: 93004,
@@ -484,6 +519,7 @@ export const illustrativeSyntheticTransactionLedgerRowset: Transaction[] = [
     CategoryPrimary: 'TRAVEL',
     CategoryDetailed: 'TRAVEL_LODGING',
     Pending: false,
+    AccountID: null,
   },
 
   // ── General merchandise / luxury retail (7 entries, $13,105) ──────────────
@@ -499,6 +535,7 @@ export const illustrativeSyntheticTransactionLedgerRowset: Transaction[] = [
     CategoryPrimary: 'GENERAL_MERCHANDISE',
     CategoryDetailed: 'GENERAL_MERCHANDISE_DEPARTMENT_STORES',
     Pending: false,
+    AccountID: null,
   },
   {
     ID: 94002,
@@ -512,6 +549,7 @@ export const illustrativeSyntheticTransactionLedgerRowset: Transaction[] = [
     CategoryPrimary: 'GENERAL_MERCHANDISE',
     CategoryDetailed: 'GENERAL_MERCHANDISE_DEPARTMENT_STORES',
     Pending: false,
+    AccountID: null,
   },
   {
     ID: 94003,
@@ -525,6 +563,7 @@ export const illustrativeSyntheticTransactionLedgerRowset: Transaction[] = [
     CategoryPrimary: 'GENERAL_MERCHANDISE',
     CategoryDetailed: 'GENERAL_MERCHANDISE_CLOTHING_AND_ACCESSORIES',
     Pending: false,
+    AccountID: null,
   },
   {
     ID: 94004,
@@ -538,6 +577,7 @@ export const illustrativeSyntheticTransactionLedgerRowset: Transaction[] = [
     CategoryPrimary: 'GENERAL_MERCHANDISE',
     CategoryDetailed: 'GENERAL_MERCHANDISE_DEPARTMENT_STORES',
     Pending: false,
+    AccountID: null,
   },
   {
     ID: 94005,
@@ -551,6 +591,7 @@ export const illustrativeSyntheticTransactionLedgerRowset: Transaction[] = [
     CategoryPrimary: 'GENERAL_MERCHANDISE',
     CategoryDetailed: 'GENERAL_MERCHANDISE_DEPARTMENT_STORES',
     Pending: false,
+    AccountID: null,
   },
   {
     ID: 94006,
@@ -564,6 +605,7 @@ export const illustrativeSyntheticTransactionLedgerRowset: Transaction[] = [
     CategoryPrimary: 'GENERAL_MERCHANDISE',
     CategoryDetailed: 'GENERAL_MERCHANDISE_CLOTHING_AND_ACCESSORIES',
     Pending: false,
+    AccountID: null,
   },
   {
     ID: 94007,
@@ -577,6 +619,7 @@ export const illustrativeSyntheticTransactionLedgerRowset: Transaction[] = [
     CategoryPrimary: 'GENERAL_MERCHANDISE',
     CategoryDetailed: 'GENERAL_MERCHANDISE_ELECTRONICS',
     Pending: false,
+    AccountID: null,
   },
 
   // ── Entertainment + subscriptions (6 entries, $1,242) ─────────────────────
@@ -592,6 +635,7 @@ export const illustrativeSyntheticTransactionLedgerRowset: Transaction[] = [
     CategoryPrimary: 'ENTERTAINMENT',
     CategoryDetailed: 'ENTERTAINMENT_MUSIC_AND_AUDIO',
     Pending: false,
+    AccountID: null,
   },
   {
     ID: 95002,
@@ -605,6 +649,7 @@ export const illustrativeSyntheticTransactionLedgerRowset: Transaction[] = [
     CategoryPrimary: 'ENTERTAINMENT',
     CategoryDetailed: 'ENTERTAINMENT_TV_AND_MOVIES',
     Pending: false,
+    AccountID: null,
   },
   {
     ID: 95003,
@@ -618,6 +663,7 @@ export const illustrativeSyntheticTransactionLedgerRowset: Transaction[] = [
     CategoryPrimary: 'ENTERTAINMENT',
     CategoryDetailed: 'ENTERTAINMENT_TV_AND_MOVIES',
     Pending: false,
+    AccountID: null,
   },
   {
     ID: 95004,
@@ -631,6 +677,7 @@ export const illustrativeSyntheticTransactionLedgerRowset: Transaction[] = [
     CategoryPrimary: 'ENTERTAINMENT',
     CategoryDetailed: 'ENTERTAINMENT_TV_AND_MOVIES',
     Pending: false,
+    AccountID: null,
   },
   {
     ID: 95005,
@@ -644,6 +691,7 @@ export const illustrativeSyntheticTransactionLedgerRowset: Transaction[] = [
     CategoryPrimary: 'ENTERTAINMENT',
     CategoryDetailed: 'ENTERTAINMENT_TV_AND_MOVIES',
     Pending: false,
+    AccountID: null,
   },
   {
     ID: 95006,
@@ -657,6 +705,7 @@ export const illustrativeSyntheticTransactionLedgerRowset: Transaction[] = [
     CategoryPrimary: 'ENTERTAINMENT',
     CategoryDetailed: 'ENTERTAINMENT_MUSIC_AND_AUDIO',
     Pending: false,
+    AccountID: null,
   },
 
   // ── Personal care (3 entries, $1,700) ─────────────────────────────────────
@@ -672,6 +721,7 @@ export const illustrativeSyntheticTransactionLedgerRowset: Transaction[] = [
     CategoryPrimary: 'PERSONAL_CARE',
     CategoryDetailed: 'PERSONAL_CARE_GYMS_AND_FITNESS_CENTERS',
     Pending: false,
+    AccountID: null,
   },
   {
     ID: 96002,
@@ -685,6 +735,7 @@ export const illustrativeSyntheticTransactionLedgerRowset: Transaction[] = [
     CategoryPrimary: 'PERSONAL_CARE',
     CategoryDetailed: 'PERSONAL_CARE_GYMS_AND_FITNESS_CENTERS',
     Pending: false,
+    AccountID: null,
   },
   {
     ID: 96003,
@@ -698,6 +749,7 @@ export const illustrativeSyntheticTransactionLedgerRowset: Transaction[] = [
     CategoryPrimary: 'PERSONAL_CARE',
     CategoryDetailed: 'PERSONAL_CARE_HAIR_AND_BEAUTY',
     Pending: false,
+    AccountID: null,
   },
 
   // ── Medical (1 entry, $920) ───────────────────────────────────────────────
@@ -713,6 +765,7 @@ export const illustrativeSyntheticTransactionLedgerRowset: Transaction[] = [
     CategoryPrimary: 'MEDICAL',
     CategoryDetailed: 'MEDICAL_OTHER_MEDICAL',
     Pending: false,
+    AccountID: null,
   },
 
   // ── Loan payments / household fixed (2 entries, $9,750) ───────────────────
@@ -728,6 +781,7 @@ export const illustrativeSyntheticTransactionLedgerRowset: Transaction[] = [
     CategoryPrimary: 'LOAN_PAYMENTS',
     CategoryDetailed: 'LOAN_PAYMENTS_MORTGAGE_PAYMENT',
     Pending: false,
+    AccountID: null,
   },
   {
     ID: 97002,
@@ -741,6 +795,7 @@ export const illustrativeSyntheticTransactionLedgerRowset: Transaction[] = [
     CategoryPrimary: 'LOAN_PAYMENTS',
     CategoryDetailed: 'LOAN_PAYMENTS_OTHER_PAYMENT',
     Pending: false,
+    AccountID: null,
   },
 
   // ── Rent and utilities (3 entries, $1,724) ────────────────────────────────
@@ -756,6 +811,7 @@ export const illustrativeSyntheticTransactionLedgerRowset: Transaction[] = [
     CategoryPrimary: 'RENT_AND_UTILITIES',
     CategoryDetailed: 'RENT_AND_UTILITIES_GAS_AND_ELECTRICITY',
     Pending: false,
+    AccountID: null,
   },
   {
     ID: 98002,
@@ -769,6 +825,7 @@ export const illustrativeSyntheticTransactionLedgerRowset: Transaction[] = [
     CategoryPrimary: 'RENT_AND_UTILITIES',
     CategoryDetailed: 'RENT_AND_UTILITIES_INTERNET_AND_CABLE',
     Pending: false,
+    AccountID: null,
   },
   {
     ID: 98003,
@@ -782,6 +839,7 @@ export const illustrativeSyntheticTransactionLedgerRowset: Transaction[] = [
     CategoryPrimary: 'RENT_AND_UTILITIES',
     CategoryDetailed: 'RENT_AND_UTILITIES_OTHER_UTILITIES',
     Pending: false,
+    AccountID: null,
   },
 
   // ── Government and non-profit (2 entries, $6,250) ─────────────────────────
@@ -797,6 +855,7 @@ export const illustrativeSyntheticTransactionLedgerRowset: Transaction[] = [
     CategoryPrimary: 'GOVERNMENT_AND_NON_PROFIT',
     CategoryDetailed: 'GOVERNMENT_AND_NON_PROFIT_DONATIONS',
     Pending: false,
+    AccountID: null,
   },
   {
     ID: 98102,
@@ -810,6 +869,7 @@ export const illustrativeSyntheticTransactionLedgerRowset: Transaction[] = [
     CategoryPrimary: 'GOVERNMENT_AND_NON_PROFIT',
     CategoryDetailed: 'GOVERNMENT_AND_NON_PROFIT_DONATIONS',
     Pending: false,
+    AccountID: null,
   },
 
   // ── General services (1 entry, $2,000) ────────────────────────────────────
@@ -825,6 +885,7 @@ export const illustrativeSyntheticTransactionLedgerRowset: Transaction[] = [
     CategoryPrimary: 'GENERAL_SERVICES',
     CategoryDetailed: 'GENERAL_SERVICES_CONSULTING_AND_LEGAL',
     Pending: false,
+    AccountID: null,
   },
 ]
 

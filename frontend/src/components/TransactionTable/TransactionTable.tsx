@@ -1,16 +1,17 @@
 import Slider from 'rc-slider'
 import 'rc-slider/assets/index.css'
 import { useEffect, useMemo, useState } from 'react'
-import type { Transaction } from '../../types'
+import type { Account, Transaction } from '../../types'
 import { formatCategoryName, formatCurrency, formatDate } from '../../utils/formatters'
 
 interface Props {
   transactions: Transaction[]
+  accounts?: Account[]
 }
 
 const PAGE_SIZE = 20
 
-export const TransactionTable = ({ transactions }: Props) => {
+export const TransactionTable = ({ transactions, accounts = [] }: Props) => {
   const maxAmount = useMemo(
     () => (transactions.length > 0 ? Math.ceil(Math.max(...transactions.map((t) => Math.abs(t.Amount)))) : 1000),
     [transactions]
@@ -19,10 +20,16 @@ export const TransactionTable = ({ transactions }: Props) => {
   const [filterCategory, setFilterCategory] = useState('')
   const [filterMerchant, setFilterMerchant] = useState('')
   const [filterPending, setFilterPending] = useState<boolean | null>(null)
+  const [filterAccountId, setFilterAccountId] = useState<number | null>(null)
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
   const [amountRange, setAmountRange] = useState<[number, number]>([0, maxAmount])
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
+
+  const accountMap = useMemo(
+    () => new Map(accounts.map((a) => [a.id, a])),
+    [accounts]
+  )
 
   useEffect(() => {
     const rangeNormalizingHandle = window.setTimeout(() => {
@@ -46,6 +53,7 @@ export const TransactionTable = ({ transactions }: Props) => {
       if (filterCategory && t.CategoryPrimary !== filterCategory) return false
       if (filterMerchant && t.MerchantName !== filterMerchant) return false
       if (filterPending !== null && t.Pending !== filterPending) return false
+      if (filterAccountId !== null && t.AccountID !== filterAccountId) return false
       const txDate = t.Date.slice(0, 10)
       if (dateFrom && txDate < dateFrom) return false
       if (dateTo && txDate > dateTo) return false
@@ -53,19 +61,20 @@ export const TransactionTable = ({ transactions }: Props) => {
       if (absAmount < amountRange[0] || absAmount > amountRange[1]) return false
       return true
     })
-  }, [transactions, filterCategory, filterMerchant, filterPending, dateFrom, dateTo, amountRange])
+  }, [transactions, filterCategory, filterMerchant, filterPending, filterAccountId, dateFrom, dateTo, amountRange])
 
   useEffect(() => {
     const pagingResetHandle = window.setTimeout(() => {
       setVisibleCount(PAGE_SIZE)
     }, 0)
     return () => window.clearTimeout(pagingResetHandle)
-  }, [filterCategory, filterMerchant, filterPending, dateFrom, dateTo, amountRange])
+  }, [filterCategory, filterMerchant, filterPending, filterAccountId, dateFrom, dateTo, amountRange])
 
   const hasActiveFilters =
     filterCategory !== '' ||
     filterMerchant !== '' ||
     filterPending !== null ||
+    filterAccountId !== null ||
     dateFrom !== '' ||
     dateTo !== '' ||
     amountRange[0] !== 0 ||
@@ -75,6 +84,7 @@ export const TransactionTable = ({ transactions }: Props) => {
     setFilterCategory('')
     setFilterMerchant('')
     setFilterPending(null)
+    setFilterAccountId(null)
     setDateFrom('')
     setDateTo('')
     setAmountRange([0, maxAmount])
@@ -98,7 +108,7 @@ export const TransactionTable = ({ transactions }: Props) => {
         )}
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-4">
         <select
           className={inputClass}
           value={filterCategory}
@@ -137,7 +147,25 @@ export const TransactionTable = ({ transactions }: Props) => {
           <option value="true">Pending</option>
         </select>
 
-        <div className="flex gap-2 col-span-2 md:col-span-2 min-w-0">
+        {accounts.length > 0 && (
+          <select
+            className={inputClass}
+            value={filterAccountId === null ? '' : String(filterAccountId)}
+            onChange={(e) =>
+              setFilterAccountId(e.target.value === '' ? null : Number(e.target.value))
+            }
+          >
+            <option value="">All accounts</option>
+            {accounts.map((account) => (
+              <option key={account.id} value={account.id}>
+                {account.institution_name} {account.name}
+                {account.mask ? ` ••${account.mask}` : ''}
+              </option>
+            ))}
+          </select>
+        )}
+
+        <div className={`flex gap-2 min-w-0 ${accounts.length > 0 ? 'col-span-2' : 'col-span-2 lg:col-span-2'}`}>
           <input
             className={`${inputClass} min-w-0`}
             type="date"
@@ -184,51 +212,62 @@ export const TransactionTable = ({ transactions }: Props) => {
               <th className="px-4 py-3 text-left">Category</th>
               <th className="px-4 py-3 text-right">Amount</th>
               <th className="px-4 py-3 text-left">Status</th>
+              {accounts.length > 0 && <th className="px-4 py-3 text-left">Account</th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
             {visibleTransactions.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-6 text-center text-gray-500 dark:text-gray-400">
+                <td colSpan={accounts.length > 0 ? 7 : 6} className="px-4 py-6 text-center text-gray-500 dark:text-gray-400">
                   No transactions match your filters.
                 </td>
               </tr>
             ) : (
-              visibleTransactions.map((t, i) => (
-                <tr
-                  key={t.ID}
-                  className={`hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors ${
-                    i % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50/50 dark:bg-gray-800/50'
-                  }`}
-                >
-                  <td className="px-4 py-3 text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                    {formatDate(t.Date)}
-                  </td>
-                  <td className="px-4 py-3 text-gray-900 dark:text-gray-50">{t.Name}</td>
-                  <td className="px-4 py-3 text-gray-700 dark:text-gray-300">{t.MerchantName}</td>
-                  <td className="px-4 py-3 text-gray-700 dark:text-gray-300">
-                    {formatCategoryName(t.CategoryPrimary)}
-                  </td>
-                  <td
-                    className={`px-4 py-3 text-right font-semibold font-mono tabular-nums ${
-                      t.Amount > 0 ? 'text-red-500' : 'text-emerald-600'
+              visibleTransactions.map((t, i) => {
+                const linkedAccount = t.AccountID !== null ? accountMap.get(t.AccountID) : undefined
+                return (
+                  <tr
+                    key={t.ID}
+                    className={`hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors ${
+                      i % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50/50 dark:bg-gray-800/50'
                     }`}
                   >
-                    {formatCurrency(t.Amount)}
-                  </td>
-                  <td className="px-4 py-3">
-                    {t.Pending ? (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400">
-                        Pending
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-400">
-                        Posted
-                      </span>
+                    <td className="px-4 py-3 text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                      {formatDate(t.Date)}
+                    </td>
+                    <td className="px-4 py-3 text-gray-900 dark:text-gray-50">{t.Name}</td>
+                    <td className="px-4 py-3 text-gray-700 dark:text-gray-300">{t.MerchantName}</td>
+                    <td className="px-4 py-3 text-gray-700 dark:text-gray-300">
+                      {formatCategoryName(t.CategoryPrimary)}
+                    </td>
+                    <td
+                      className={`px-4 py-3 text-right font-semibold font-mono tabular-nums ${
+                        t.Amount > 0 ? 'text-red-500' : 'text-emerald-600'
+                      }`}
+                    >
+                      {formatCurrency(t.Amount)}
+                    </td>
+                    <td className="px-4 py-3">
+                      {t.Pending ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400">
+                          Pending
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-400">
+                          Posted
+                        </span>
+                      )}
+                    </td>
+                    {accounts.length > 0 && (
+                      <td className="px-4 py-3 text-gray-500 dark:text-gray-400 text-xs whitespace-nowrap">
+                        {linkedAccount
+                          ? `${linkedAccount.institution_name} ${linkedAccount.name}`
+                          : '--'}
+                      </td>
                     )}
-                  </td>
-                </tr>
-              ))
+                  </tr>
+                )
+              })
             )}
           </tbody>
         </table>
