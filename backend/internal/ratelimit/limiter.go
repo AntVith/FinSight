@@ -90,6 +90,14 @@ func (gate *CooldownGate) Mark(key string) {
 	gate.lastPassAt[key] = gate.clockNow()
 }
 
+// Clear forgets a previous pass for key so a failed attempt does not consume
+// the cooldown window.
+func (gate *CooldownGate) Clear(key string) {
+	gate.mu.Lock()
+	defer gate.mu.Unlock()
+	delete(gate.lastPassAt, key)
+}
+
 // Middleware rejects with 429 when the limiter blocks the resolved key.
 func Middleware(limiter *Limiter, keyFn func(*http.Request) string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
