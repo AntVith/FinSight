@@ -2,7 +2,6 @@ package transactions
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log"
 	"time"
@@ -30,13 +29,7 @@ func SyncTransactions(ctx context.Context, item repository.Item, accountIDMap ma
 
 		resp, _, err := plaid.GetClient().PlaidApi.TransactionsSync(ctx).TransactionsSyncRequest(*request).Execute()
 		if err != nil {
-			var openAPIErr *plaidSDK.GenericOpenAPIError
-			if errors.As(err, &openAPIErr) {
-				body := string(openAPIErr.Body())
-				log.Printf("plaid /transactions/sync error: item_id=%d body=%s", item.ID, body)
-				return fmt.Errorf("error syncing transactions: plaid rejected request: %s", body)
-			}
-			log.Printf("plaid /transactions/sync error (no body): item_id=%d err=%v", item.ID, err)
+			log.Printf("plaid /transactions/sync error: item_id=%d %s", item.ID, plaid.DescribeError(err))
 			return fmt.Errorf("error syncing transactions: %w", err)
 		}
 
