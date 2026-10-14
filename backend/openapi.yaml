@@ -300,6 +300,25 @@ paths:
                 error: no linked accounts found
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '409':
+          description: |
+            Plaid reports the bank connection can only be repaired by linking
+            the bank again (ITEM_LOGIN_REQUIRED, INVALID_ACCESS_TOKEN or
+            ITEM_NOT_FOUND). The sync cooldown is not consumed.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: bank connection needs to be linked again
+                  code:
+                    type: string
+                    enum: [reconnect_required]
+              example:
+                error: bank connection needs to be linked again
+                code: reconnect_required
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
