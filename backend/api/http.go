@@ -172,6 +172,25 @@ func writeLoggedInternalError(w http.ResponseWriter, operation string, err error
 	writeError(w, http.StatusInternalServerError, clientMessage)
 }
 
+// reconnectRequiredCode is the machine-readable code the frontend keys on to
+// tell the user to link the bank again rather than retry.
+const reconnectRequiredCode = "reconnect_required"
+
+// writeSyncFailure answers a failed Plaid sync. Item-level Plaid errors that
+// only a re-link can fix return 409 with reconnect_required; everything else
+// stays a generic 500 so transient outages do not tell the user to re-link.
+func writeSyncFailure(w http.ResponseWriter, operation string, err error, clientMessage string) {
+	if details, isPlaidError := plaid.ParseError(err); isPlaidError && details.RequiresReconnect() {
+		log.Printf("%s: %v", operation, err)
+		writeJSON(w, http.StatusConflict, map[string]string{
+			"error": "bank connection needs to be linked again",
+			"code":  reconnectRequiredCode,
+		})
+		return
+	}
+	writeLoggedInternalError(w, operation, err, clientMessage)
+}
+
 func writeTooManyRequests(w http.ResponseWriter, message string, retryAfter time.Duration) {
 	seconds := int(retryAfter.Seconds())
 	if seconds < 1 {
@@ -339,17 +358,25 @@ func syncTransactionsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Start cooldown only once we know a Plaid call will be made.
+	// Mark before calling Plaid so concurrent requests cannot both pass the gate,
+	// then release it on any failure so a broken sync does not lock the user out
+	// for the full cooldown.
 	transactionSyncGate.Mark(syncKey)
+	syncSucceeded := false
+	defer func() {
+		if !syncSucceeded {
+			transactionSyncGate.Clear(syncKey)
+		}
+	}()
 
 	for _, item := range items {
 		accountIDMap, err := accounts.SyncAccounts(r.Context(), item)
 		if err != nil {
-			writeLoggedInternalError(w, "sync accounts", err, "could not sync accounts")
+			writeSyncFailure(w, "sync accounts", err, "could not sync accounts")
 			return
 		}
 		if err := transactions.SyncTransactions(r.Context(), item, accountIDMap); err != nil {
-			writeLoggedInternalError(w, "sync transactions", err, "could not sync transactions")
+			writeSyncFailure(w, "sync transactions", err, "could not sync transactions")
 			return
 		}
 	}
@@ -359,6 +386,7 @@ func syncTransactionsHandler(w http.ResponseWriter, r *http.Request) {
 		writeLoggedInternalError(w, "load transactions after sync", err, "could not sync transactions")
 		return
 	}
+	syncSucceeded = true
 
 	// Fire-and-forget Claude insight regeneration so the HTTP response returns
 	// the moment Plaid is reconciled. Frontend polls /api/insights to surface
